@@ -1,0 +1,278 @@
+<com.webreach.mirth.model.Channel>
+  <id>baaebbf6-a140-496d-9176-ca1181337845</id>
+  <name>Me4RT_2_Camelia_ORG</name>
+  <description>Notifica richiesta da Me4RT a Camelia</description>
+  <enabled>true</enabled>
+  <version>1.8.2.4472</version>
+  <lastModified>
+    <time>1320336372667</time>
+    <timezone>Europe/Berlin</timezone>
+  </lastModified>
+  <revision>84</revision>
+  <sourceConnector>
+    <name>sourceConnector</name>
+    <properties>
+      <property name="port">9091</property>
+      <property name="listenerAddress">localhost</property>
+      <property name="useListenerAddress">1</property>
+      <property name="DataType">SOAP Listener</property>
+      <property name="serviceName">Mirth</property>
+      <property name="externalAddress">localhost</property>
+      <property name="Content-Type">text/xml</property>
+      <property name="host">axis:soap://localhost:9091/services</property>
+      <property name="responseValue">None</property>
+    </properties>
+    <transformer>
+      <steps>
+        <com.webreach.mirth.model.Step>
+          <sequenceNumber>0</sequenceNumber>
+          <name>Unescaped message</name>
+          <script>logger.info(&apos;&gt;&gt;&gt; MIRTHNOTIFY: passo unescaped message&apos;);
+
+responseMap.put(&quot;RispostaImmediata&quot;, ResponseFactory.getSuccessResponse(&apos;OK&apos;));
+var unescapedmsg = new Packages.java.lang.String(msg.toString());
+
+//logger.error(msg.toString());
+unescapedmsg = unescapedmsg.replaceAll(&apos;&amp;lt;&apos;,&apos;&lt;&apos;);
+unescapedmsg = unescapedmsg.replaceAll(&apos;&amp;gt;&apos;,&apos;&gt;&apos;);
+
+unescapedmsg = new XML(unescapedmsg)
+//logger.error(unescapedmsg);
+channelMap.put(&apos;unescapedmsg&apos;,unescapedmsg);</script>
+          <type>JavaScript</type>
+          <data class="map">
+            <entry>
+              <string>Script</string>
+              <string>logger.info(&apos;&gt;&gt;&gt; MIRTHNOTIFY: passo unescaped message&apos;);
+
+responseMap.put(&quot;RispostaImmediata&quot;, ResponseFactory.getSuccessResponse(&apos;OK&apos;));
+var unescapedmsg = new Packages.java.lang.String(msg.toString());
+
+//logger.error(msg.toString());
+unescapedmsg = unescapedmsg.replaceAll(&apos;&amp;lt;&apos;,&apos;&lt;&apos;);
+unescapedmsg = unescapedmsg.replaceAll(&apos;&amp;gt;&apos;,&apos;&gt;&apos;);
+
+unescapedmsg = new XML(unescapedmsg)
+//logger.error(unescapedmsg);
+channelMap.put(&apos;unescapedmsg&apos;,unescapedmsg);</string>
+            </entry>
+          </data>
+        </com.webreach.mirth.model.Step>
+        <com.webreach.mirth.model.Step>
+          <sequenceNumber>1</sequenceNumber>
+          <name>Extract info</name>
+          <script>logger.info(&apos;MIRTHNOTIFY passo extract info&apos;);
+
+// Eliminazione ns 
+var unescapedmsgStr = new Packages.java.lang.String(unescapedmsg.toString());
+unescapedmsgStr = unescapedmsgStr.replaceAll(&apos; xmlns=&quot;http://www.metafora.mi.it/schemas/basic&quot;&apos;,&apos; &apos;);
+unescapedmsgStr = unescapedmsgStr.replaceAll(&apos; xmlns:ns1=&quot;http://www.metafora.mi.it/schemas/fraseggio/notify_state_modification_req&quot;&apos;,&apos; &apos;);
+unescapedmsgStr = unescapedmsgStr.replaceAll(&apos; xmlns:ns2=&quot;http://www.metafora.mi.it/schemas/fraseggio&quot;&apos;,&apos; &apos;);
+unescapedmsgStr = unescapedmsgStr.replaceAll(&apos;&lt;ns1:&apos;,&apos;&lt;&apos;).replaceAll(&apos;&lt;/ns1:&apos;,&apos;&lt;/&apos;);
+unescapedmsgStr = unescapedmsgStr.replaceAll(&apos;&lt;ns2:&apos;,&apos;&lt;&apos;).replaceAll(&apos;&lt;/ns2:&apos;,&apos;&lt;/&apos;);
+logger.info(&apos;DOPO ELIMINAZIONE NS= &apos; + unescapedmsgStr);
+
+var unescapedmsgStrXML = new XML(unescapedmsgStr);
+
+var sender = unescapedmsgStrXML[&apos;Header&apos;][&apos;Sender&apos;].toString();
+channelMap.put(&apos;sender&apos;,sender);
+// ricevente
+var receiver = unescapedmsgStrXML[&apos;Header&apos;][&apos;Receiver&apos;].toString()
+channelMap.put(&apos;receiver&apos;,receiver);
+// time stamp
+var timestamp = unescapedmsgStrXML[&apos;Header&apos;][&apos;Timestamp&apos;].toString();
+channelMap.put(&apos;timestamp&apos;,timestamp);
+//var num_messages = $(&apos;unescapedmsg&apos;)[&apos;Data&apos;][&apos;AsyncNotifierEnqueueRequest&apos;][&apos;ExternalSubmissionList&apos;][&apos;@count&apos;].toString()
+//channelMap.put(&apos;num_messages&apos;,num_messages);
+
+// producer_id ? sinonimo di documento
+var producerId = unescapedmsgStrXML[&apos;Data&apos;][&apos;NotifyStateModificationRequest&apos;][&apos;ExternalSubmissionList&apos;][&apos;ExternalSubmission&apos;][0][&apos;ProducerID&apos;].toString()
+channelMap.put(&apos;producerId&apos;,producerId);
+
+// numero di producerId
+var numProducer = 1;
+channelMap.put(&apos;numProducer&apos;,numProducer);
+
+// stete code (priorit?)
+var stateCode = unescapedmsgStrXML[&apos;Data&apos;][&apos;NotifyStateModificationRequest&apos;][&apos;ExternalSubmissionList&apos;][&apos;ExternalSubmission&apos;][&apos;Submission&apos;][&apos;@statecode&apos;].toString()
+logger.info(&apos;Extract Info stateCode= &apos; + stateCode);
+channelMap.put(&apos;stateCode&apos;,stateCode);</script>
+          <type>JavaScript</type>
+          <data class="map">
+            <entry>
+              <string>Script</string>
+              <string>logger.info(&apos;MIRTHNOTIFY passo extract info&apos;);
+
+// Eliminazione ns 
+var unescapedmsgStr = new Packages.java.lang.String(unescapedmsg.toString());
+unescapedmsgStr = unescapedmsgStr.replaceAll(&apos; xmlns=&quot;http://www.metafora.mi.it/schemas/basic&quot;&apos;,&apos; &apos;);
+unescapedmsgStr = unescapedmsgStr.replaceAll(&apos; xmlns:ns1=&quot;http://www.metafora.mi.it/schemas/fraseggio/notify_state_modification_req&quot;&apos;,&apos; &apos;);
+unescapedmsgStr = unescapedmsgStr.replaceAll(&apos; xmlns:ns2=&quot;http://www.metafora.mi.it/schemas/fraseggio&quot;&apos;,&apos; &apos;);
+unescapedmsgStr = unescapedmsgStr.replaceAll(&apos;&lt;ns1:&apos;,&apos;&lt;&apos;).replaceAll(&apos;&lt;/ns1:&apos;,&apos;&lt;/&apos;);
+unescapedmsgStr = unescapedmsgStr.replaceAll(&apos;&lt;ns2:&apos;,&apos;&lt;&apos;).replaceAll(&apos;&lt;/ns2:&apos;,&apos;&lt;/&apos;);
+logger.info(&apos;DOPO ELIMINAZIONE NS= &apos; + unescapedmsgStr);
+
+var unescapedmsgStrXML = new XML(unescapedmsgStr);
+
+var sender = unescapedmsgStrXML[&apos;Header&apos;][&apos;Sender&apos;].toString();
+channelMap.put(&apos;sender&apos;,sender);
+// ricevente
+var receiver = unescapedmsgStrXML[&apos;Header&apos;][&apos;Receiver&apos;].toString()
+channelMap.put(&apos;receiver&apos;,receiver);
+// time stamp
+var timestamp = unescapedmsgStrXML[&apos;Header&apos;][&apos;Timestamp&apos;].toString();
+channelMap.put(&apos;timestamp&apos;,timestamp);
+//var num_messages = $(&apos;unescapedmsg&apos;)[&apos;Data&apos;][&apos;AsyncNotifierEnqueueRequest&apos;][&apos;ExternalSubmissionList&apos;][&apos;@count&apos;].toString()
+//channelMap.put(&apos;num_messages&apos;,num_messages);
+
+// producer_id ? sinonimo di documento
+var producerId = unescapedmsgStrXML[&apos;Data&apos;][&apos;NotifyStateModificationRequest&apos;][&apos;ExternalSubmissionList&apos;][&apos;ExternalSubmission&apos;][0][&apos;ProducerID&apos;].toString()
+channelMap.put(&apos;producerId&apos;,producerId);
+
+// numero di producerId
+var numProducer = 1;
+channelMap.put(&apos;numProducer&apos;,numProducer);
+
+// stete code (priorit?)
+var stateCode = unescapedmsgStrXML[&apos;Data&apos;][&apos;NotifyStateModificationRequest&apos;][&apos;ExternalSubmissionList&apos;][&apos;ExternalSubmission&apos;][&apos;Submission&apos;][&apos;@statecode&apos;].toString()
+logger.info(&apos;Extract Info stateCode= &apos; + stateCode);
+channelMap.put(&apos;stateCode&apos;,stateCode);</string>
+            </entry>
+          </data>
+        </com.webreach.mirth.model.Step>
+      </steps>
+      <inboundTemplate>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;&#x0D;&lt;!-- Created with Liquid XML Studio 1.0.8.0 (http://www.liquid-technologies.com) --&gt;&#x0D;&lt;Message&gt;&#x0D;	&lt;Header&gt;&#x0D;		&lt;Sender&gt;FRASEGGIO&lt;/Sender&gt;&#x0D;		&lt;Receiver&gt;MIRTH&lt;/Receiver&gt;&#x0D;		&lt;Action&gt;AsyncNotifierEnqueue&lt;/Action&gt;&#x0D;		&lt;ProcessingMode&gt;P&lt;/ProcessingMode&gt;&#x0D;		&lt;Version&gt;1.0&lt;/Version&gt;&#x0D;		&lt;Timestamp&gt;20080328T162152&lt;/Timestamp&gt;&#x0D;	&lt;/Header&gt;&#x0D;	&lt;Data&gt;&#x0D;		&lt;NotifyStateModificationRequest&gt;&#x0D;			&lt;ExternalSubmissionList count=&quot;1&quot;&gt;&#x0D;				&lt;ExternalSubmission&gt;&#x0D;					&lt;ProducerID&gt;2008000000438&lt;/ProducerID&gt;&#x0D;					&lt;Submission date=&quot;20080328T162152&quot; destination=&quot;0&quot; statecode=&quot;0&quot;&gt;0&lt;/Submission&gt;&#x0D;				&lt;/ExternalSubmission&gt;&#x0D;			&lt;/ExternalSubmissionList&gt;&#x0D;		&lt;/NotifyStateModificationRequest&gt;&#x0D;	&lt;/Data&gt;&#x0D;&lt;/Message&gt;</inboundTemplate>
+      <outboundTemplate></outboundTemplate>
+      <inboundProtocol>XML</inboundProtocol>
+      <outboundProtocol>XML</outboundProtocol>
+      <inboundProperties>
+        <property name="stripNamespaces">false</property>
+      </inboundProperties>
+      <outboundProperties>
+        <property name="stripNamespaces">true</property>
+      </outboundProperties>
+    </transformer>
+    <filter>
+      <rules/>
+    </filter>
+    <transportName>SOAP Listener</transportName>
+    <mode>SOURCE</mode>
+    <enabled>true</enabled>
+  </sourceConnector>
+  <destinationConnectors>
+    <com.webreach.mirth.model.Connector>
+      <name>Send ORG</name>
+      <properties>
+        <property name="messageEnd">0x1C</property>
+        <property name="messageStart">0x0B</property>
+        <property name="sendTimeout">5000</property>
+        <property name="charEncoding">hex</property>
+        <property name="processHl7AckResponse">1</property>
+        <property name="bufferSize">65536</property>
+        <property name="rotateQueue">0</property>
+        <property name="port">6661</property>
+        <property name="tcpProtocolClassName">org.mule.providers.tcp.protocols.TcpProtocol</property>
+        <property name="segmentEnd">0x0D</property>
+        <property name="charsetEncoding">DEFAULT_ENCODING</property>
+        <property name="keepSendSocketOpen">0</property>
+        <property name="host">192.168.30.70</property>
+        <property name="maxRetryCount">2</property>
+        <property name="ackTimeout">5000</property>
+        <property name="DataType">LLP Sender</property>
+        <property name="usePersistentQueues">0</property>
+        <property name="reconnectMillisecs">10000</property>
+        <property name="replyChannelId">sink</property>
+        <property name="template">${message.encodedData}</property>
+        <property name="recordSeparator">0x0D</property>
+      </properties>
+      <transformer>
+        <steps>
+          <com.webreach.mirth.model.Step>
+            <sequenceNumber>0</sequenceNumber>
+            <name>Building ORG</name>
+            <script>// log...
+logger.info(&quot;&gt;&gt;&gt; preparazione ORG per messaggio di ID&quot;);
+
+tmp[&apos;MSH&apos;][&apos;MSH.7&apos;][&apos;MSH.7.1&apos;] = DateUtil.getCurrentDate(&apos;yyyyMMddhhmmss&apos;);
+tmp[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;] = Packages.ca.uhn.hl7v2.util.MessageIDGenerator.getInstance().getNewID();
+tmp[&apos;MSA&apos;][&apos;MSA.2&apos;][&apos;MSA.2.1&apos;] = tmp[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;];
+tmp[&apos;ORC&apos;][&apos;ORC.1&apos;][&apos;ORC.1.1&apos;] = &apos;NW&apos;;
+tmp[&apos;ORC&apos;][&apos;ORC.2&apos;][&apos;ORC.2.1&apos;] = &apos;Codice Camelia&apos;;
+tmp[&apos;ORC&apos;][&apos;ORC.3&apos;][&apos;ORC.3.1&apos;] = &apos;Codice Me4RT&apos;;
+tmp[&apos;ORC&apos;][&apos;ORC.4&apos;][&apos;ORC.4.1&apos;] = &apos;Codice appuntamento Camelia&apos;;
+
+// log...
+logger.info(&quot;&lt;&lt;&lt; preparazione ORG inviato&quot;);</script>
+            <type>JavaScript</type>
+            <data class="map">
+              <entry>
+                <string>Script</string>
+                <string>// log...
+logger.info(&quot;&gt;&gt;&gt; preparazione ORG per messaggio di ID&quot;);
+
+tmp[&apos;MSH&apos;][&apos;MSH.7&apos;][&apos;MSH.7.1&apos;] = DateUtil.getCurrentDate(&apos;yyyyMMddhhmmss&apos;);
+tmp[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;] = Packages.ca.uhn.hl7v2.util.MessageIDGenerator.getInstance().getNewID();
+tmp[&apos;MSA&apos;][&apos;MSA.2&apos;][&apos;MSA.2.1&apos;] = tmp[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;];
+tmp[&apos;ORC&apos;][&apos;ORC.1&apos;][&apos;ORC.1.1&apos;] = &apos;NW&apos;;
+tmp[&apos;ORC&apos;][&apos;ORC.2&apos;][&apos;ORC.2.1&apos;] = &apos;Codice Camelia&apos;;
+tmp[&apos;ORC&apos;][&apos;ORC.3&apos;][&apos;ORC.3.1&apos;] = &apos;Codice Me4RT&apos;;
+tmp[&apos;ORC&apos;][&apos;ORC.4&apos;][&apos;ORC.4.1&apos;] = &apos;Codice appuntamento Camelia&apos;;
+
+// log...
+logger.info(&quot;&lt;&lt;&lt; preparazione ORG inviato&quot;);</string>
+              </entry>
+            </data>
+          </com.webreach.mirth.model.Step>
+        </steps>
+        <inboundTemplate></inboundTemplate>
+        <outboundTemplate>MSH|^~\&amp;|ME4RT|MEDAS|CAMELIA|SANTER|20111014122710||ORG^O20|20111014122710|P|2.5
+MSA|AA|III
+ORC|OK|2007_867973_1|2007A00000153|XXX
+
+
+
+
+</outboundTemplate>
+        <inboundProtocol>XML</inboundProtocol>
+        <outboundProtocol>HL7V2</outboundProtocol>
+        <inboundProperties>
+          <property name="stripNamespaces">true</property>
+        </inboundProperties>
+        <outboundProperties>
+          <property name="handleRepetitions">false</property>
+          <property name="stripNamespaces">true</property>
+          <property name="convertLFtoCR">true</property>
+          <property name="useStrictValidation">false</property>
+          <property name="useStrictParser">false</property>
+        </outboundProperties>
+      </transformer>
+      <filter>
+        <rules/>
+      </filter>
+      <transportName>LLP Sender</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+    </com.webreach.mirth.model.Connector>
+  </destinationConnectors>
+  <properties>
+    <property name="initialState">started</property>
+    <property name="synchronous">true</property>
+    <property name="store_messages">true</property>
+    <property name="encryptData">false</property>
+    <property name="transactional">false</property>
+    <property name="max_message_age">5</property>
+    <property name="dont_store_filtered">false</property>
+    <property name="error_messages_only">false</property>
+  </properties>
+  <preprocessingScript>// Modify the message variable below to pre process data
+return message;</preprocessingScript>
+  <postprocessingScript>// This script executes once after a message has been processed
+return;</postprocessingScript>
+  <deployScript></deployScript>
+  <shutdownScript>// This script executes once when the mule engine is stopped
+// You only have access to the globalMap here to persist data
+
+// chiusura della connessone Oracle
+globalMap.get(&apos;mirthnotify.db.connection&apos;).close();
+return;</shutdownScript>
+</com.webreach.mirth.model.Channel>

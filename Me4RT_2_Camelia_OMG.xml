@@ -1,0 +1,308 @@
+<com.webreach.mirth.model.Channel>
+  <id>baaebbf6-a140-496d-9176-ca1181337845</id>
+  <name>Me4RT_2_Camelia_OMG</name>
+  <description>Restituzione erogato da Me4RT a Camelia</description>
+  <enabled>true</enabled>
+  <version>1.8.2.4472</version>
+  <lastModified>
+    <time>1336560613139</time>
+    <timezone>Europe/Rome</timezone>
+  </lastModified>
+  <revision>157</revision>
+  <sourceConnector>
+    <name>sourceConnector</name>
+    <properties>
+      <property name="port">9091</property>
+      <property name="listenerAddress">localhost</property>
+      <property name="useListenerAddress">1</property>
+      <property name="DataType">SOAP Listener</property>
+      <property name="serviceName">me4rttocamelia</property>
+      <property name="externalAddress">localhost</property>
+      <property name="Content-Type">text/xml</property>
+      <property name="host">axis:soap://localhost:9091/services</property>
+      <property name="responseValue">None</property>
+    </properties>
+    <transformer>
+      <steps/>
+      <inboundTemplate>&lt;me4RTToCamelia xmlns=&quot;http://www.medas-solutions.it/mfw/camelia&quot;&gt;
+	&lt;entry id=&quot;0&quot;&gt;
+		&lt;placerOrderNumber&gt;PLACERORDERNUMBER&lt;/placerOrderNumber&gt;
+		&lt;placerGroupNumber/&gt;
+		&lt;fillerOrderNumber&gt;3&lt;/fillerOrderNumber&gt;
+		&lt;orderStatus&gt;CA&lt;/orderStatus&gt;
+	&lt;/entry&gt;
+	&lt;entry id=&quot;1&quot;&gt;
+		&lt;placerOrderNumber&gt;PLACERORDERNUMBER&lt;/placerOrderNumber&gt;
+		&lt;placerGroupNumber&gt;PlacerGroupNumber&lt;/placerGroupNumber&gt;
+		&lt;fillerOrderNumber&gt;4&lt;/fillerOrderNumber&gt;
+		&lt;orderStatus&gt;CA&lt;/orderStatus&gt;
+	&lt;/entry&gt;
+	&lt;entry id=&quot;2&quot;&gt;
+		&lt;placerOrderNumber&gt;PLACERORDERNUMBER&lt;/placerOrderNumber&gt;
+		&lt;placerGroupNumber&gt;PlacerGroupNumber&lt;/placerGroupNumber&gt;
+		&lt;fillerOrderNumber&gt;5&lt;/fillerOrderNumber&gt;
+		&lt;orderStatus&gt;CA&lt;/orderStatus&gt;
+	&lt;/entry&gt;
+	&lt;entry id=&quot;3&quot;&gt;
+		&lt;placerOrderNumber&gt;PLACERORDERNUMBER&lt;/placerOrderNumber&gt;
+		&lt;placerGroupNumber&gt;PlacerGroupNumber&lt;/placerGroupNumber&gt;
+		&lt;fillerOrderNumber&gt;6&lt;/fillerOrderNumber&gt;
+		&lt;orderStatus&gt;CM&lt;/orderStatus&gt;
+	&lt;/entry&gt;
+&lt;/me4RTToCamelia&gt;
+</inboundTemplate>
+      <outboundTemplate></outboundTemplate>
+      <inboundProtocol>XML</inboundProtocol>
+      <outboundProtocol>XML</outboundProtocol>
+      <inboundProperties>
+        <property name="stripNamespaces">false</property>
+      </inboundProperties>
+      <outboundProperties>
+        <property name="stripNamespaces">true</property>
+      </outboundProperties>
+    </transformer>
+    <filter>
+      <rules/>
+    </filter>
+    <transportName>SOAP Listener</transportName>
+    <mode>SOURCE</mode>
+    <enabled>true</enabled>
+  </sourceConnector>
+  <destinationConnectors>
+    <com.webreach.mirth.model.Connector>
+      <name>Log Message</name>
+      <properties>
+        <property name="secure">1</property>
+        <property name="scheme">file</property>
+        <property name="binary">0</property>
+        <property name="username">anonymous</property>
+        <property name="outputPattern">Me4RT_2_Camelia_OMG.txt</property>
+        <property name="validateConnections">1</property>
+        <property name="DataType">File Writer</property>
+        <property name="FTPAnonymous">1</property>
+        <property name="charsetEncoding">DEFAULT_ENCODING</property>
+        <property name="password">anonymous</property>
+        <property name="passive">1</property>
+        <property name="template">${message.rawData}</property>
+        <property name="outputAppend">1</property>
+        <property name="host">/home/medas/camelia/logs</property>
+      </properties>
+      <transformer>
+        <steps>
+          <com.webreach.mirth.model.Step>
+            <sequenceNumber>0</sequenceNumber>
+            <name>Log input to console</name>
+            <script>logger.info(&quot;&gt;&gt;&gt; Messaggio da Me4RT: &quot; + msg.toString());</script>
+            <type>JavaScript</type>
+            <data class="map">
+              <entry>
+                <string>Script</string>
+                <string>logger.info(&quot;&gt;&gt;&gt; Messaggio da Me4RT: &quot; + msg.toString());</string>
+              </entry>
+            </data>
+          </com.webreach.mirth.model.Step>
+        </steps>
+        <inboundTemplate></inboundTemplate>
+        <outboundTemplate></outboundTemplate>
+        <inboundProtocol>XML</inboundProtocol>
+        <outboundProtocol>XML</outboundProtocol>
+        <inboundProperties>
+          <property name="stripNamespaces">true</property>
+        </inboundProperties>
+        <outboundProperties/>
+      </transformer>
+      <filter>
+        <rules/>
+      </filter>
+      <transportName>File Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+    </com.webreach.mirth.model.Connector>
+    <com.webreach.mirth.model.Connector>
+      <name>Send OMG</name>
+      <properties>
+        <property name="messageEnd">0x1C</property>
+        <property name="messageStart">0x0B</property>
+        <property name="sendTimeout">5000</property>
+        <property name="charEncoding">hex</property>
+        <property name="processHl7AckResponse">1</property>
+        <property name="bufferSize">65536</property>
+        <property name="rotateQueue">0</property>
+        <property name="port">17354</property>
+        <property name="tcpProtocolClassName">org.mule.providers.tcp.protocols.TcpProtocol</property>
+        <property name="segmentEnd">0x0D</property>
+        <property name="charsetEncoding">DEFAULT_ENCODING</property>
+        <property name="keepSendSocketOpen">0</property>
+        <property name="host">10.4.0.120</property>
+        <property name="maxRetryCount">2</property>
+        <property name="ackTimeout">10000</property>
+        <property name="DataType">LLP Sender</property>
+        <property name="usePersistentQueues">0</property>
+        <property name="reconnectMillisecs">10000</property>
+        <property name="replyChannelId">sink</property>
+        <property name="template">${message.encodedData}</property>
+        <property name="recordSeparator">0x0D</property>
+      </properties>
+      <transformer>
+        <steps>
+          <com.webreach.mirth.model.Step>
+            <sequenceNumber>0</sequenceNumber>
+            <name>Building OMG</name>
+            <script>// log...
+logger.info(&quot;&gt;&gt;&gt; preparazione OMG&quot;);
+
+// lettura numero di prestazioni...
+var numEntry = msg[&apos;entry&apos;].length();
+logger.info(&quot;&lt;&lt;&lt; numero di prestazioni da notificare: &quot; + numEntry);
+
+// header messaggio...
+tmp[&apos;MSH&apos;][&apos;MSH.7&apos;][&apos;MSH.7.1&apos;] = DateUtil.getCurrentDate(&apos;yyyyMMddhhmmss&apos;);
+tmp[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;] = Packages.ca.uhn.hl7v2.util.MessageIDGenerator.getInstance().getNewID();
+
+// parte prestazioni...
+for (var i=0; i &lt; numEntry; i++) {
+	if (i &gt; 0) {
+		// dal secondo giro in poi genero i nuovi segmenti...
+		createSegmentAfter(&apos;ORC&apos;, tmp[&apos;OBR&apos;][i - 1]);		
+		createSegmentAfter(&apos;OBR&apos;, tmp[&apos;ORC&apos;][i]);
+	} 
+	tmp[&apos;ORC&apos;][i][&apos;ORC.1&apos;][&apos;ORC.1.1&apos;] = &apos;SC&apos;;
+	tmp[&apos;ORC&apos;][i][&apos;ORC.2&apos;][&apos;ORC.2.1&apos;] = msg[&apos;entry&apos;][i][&apos;placerOrderNumber&apos;].toString();
+	tmp[&apos;ORC&apos;][i][&apos;ORC.3&apos;][&apos;ORC.3.1&apos;] = msg[&apos;entry&apos;][i][&apos;fillerOrderNumber&apos;].toString();
+	tmp[&apos;ORC&apos;][i][&apos;ORC.4&apos;][&apos;ORC.4.1&apos;] = msg[&apos;entry&apos;][i][&apos;placerGroupNumber&apos;].toString();
+	tmp[&apos;ORC&apos;][i][&apos;ORC.5&apos;][&apos;ORC.5.1&apos;] = msg[&apos;entry&apos;][i][&apos;orderStatus&apos;].toString();
+	tmp[&apos;OBR&apos;][i][&apos;OBR.1&apos;][&apos;OBR.1.1&apos;] = i + 1;
+	tmp[&apos;OBR&apos;][i][&apos;OBR.2&apos;][&apos;OBR.2.1&apos;] = msg[&apos;entry&apos;][i][&apos;placerOrderNumber&apos;].toString();
+	tmp[&apos;OBR&apos;][i][&apos;OBR.3&apos;][&apos;OBR.3.1&apos;] = msg[&apos;entry&apos;][i][&apos;fillerOrderNumber&apos;].toString();
+	tmp[&apos;OBR&apos;][i][&apos;OBR.4&apos;][&apos;OBR.4.1&apos;] = msg[&apos;entry&apos;][i][&apos;universalServiceIdentifier&apos;].toString();
+	tmp[&apos;OBR&apos;][i][&apos;OBR.4&apos;][&apos;OBR.4.2&apos;] = msg[&apos;entry&apos;][i][&apos;universalServiceDescription&apos;].toString();
+}
+
+// log...
+logger.info(&quot;&gt;&gt;&gt; Messaggio per Camelia: &quot; + tmp.toString());
+logger.info(&quot;&lt;&lt;&lt; preparazione OMG&quot;);</script>
+            <type>JavaScript</type>
+            <data class="map">
+              <entry>
+                <string>Script</string>
+                <string>// log...
+logger.info(&quot;&gt;&gt;&gt; preparazione OMG&quot;);
+
+// lettura numero di prestazioni...
+var numEntry = msg[&apos;entry&apos;].length();
+logger.info(&quot;&lt;&lt;&lt; numero di prestazioni da notificare: &quot; + numEntry);
+
+// header messaggio...
+tmp[&apos;MSH&apos;][&apos;MSH.7&apos;][&apos;MSH.7.1&apos;] = DateUtil.getCurrentDate(&apos;yyyyMMddhhmmss&apos;);
+tmp[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;] = Packages.ca.uhn.hl7v2.util.MessageIDGenerator.getInstance().getNewID();
+
+// parte prestazioni...
+for (var i=0; i &lt; numEntry; i++) {
+	if (i &gt; 0) {
+		// dal secondo giro in poi genero i nuovi segmenti...
+		createSegmentAfter(&apos;ORC&apos;, tmp[&apos;OBR&apos;][i - 1]);		
+		createSegmentAfter(&apos;OBR&apos;, tmp[&apos;ORC&apos;][i]);
+	} 
+	tmp[&apos;ORC&apos;][i][&apos;ORC.1&apos;][&apos;ORC.1.1&apos;] = &apos;SC&apos;;
+	tmp[&apos;ORC&apos;][i][&apos;ORC.2&apos;][&apos;ORC.2.1&apos;] = msg[&apos;entry&apos;][i][&apos;placerOrderNumber&apos;].toString();
+	tmp[&apos;ORC&apos;][i][&apos;ORC.3&apos;][&apos;ORC.3.1&apos;] = msg[&apos;entry&apos;][i][&apos;fillerOrderNumber&apos;].toString();
+	tmp[&apos;ORC&apos;][i][&apos;ORC.4&apos;][&apos;ORC.4.1&apos;] = msg[&apos;entry&apos;][i][&apos;placerGroupNumber&apos;].toString();
+	tmp[&apos;ORC&apos;][i][&apos;ORC.5&apos;][&apos;ORC.5.1&apos;] = msg[&apos;entry&apos;][i][&apos;orderStatus&apos;].toString();
+	tmp[&apos;OBR&apos;][i][&apos;OBR.1&apos;][&apos;OBR.1.1&apos;] = i + 1;
+	tmp[&apos;OBR&apos;][i][&apos;OBR.2&apos;][&apos;OBR.2.1&apos;] = msg[&apos;entry&apos;][i][&apos;placerOrderNumber&apos;].toString();
+	tmp[&apos;OBR&apos;][i][&apos;OBR.3&apos;][&apos;OBR.3.1&apos;] = msg[&apos;entry&apos;][i][&apos;fillerOrderNumber&apos;].toString();
+	tmp[&apos;OBR&apos;][i][&apos;OBR.4&apos;][&apos;OBR.4.1&apos;] = msg[&apos;entry&apos;][i][&apos;universalServiceIdentifier&apos;].toString();
+	tmp[&apos;OBR&apos;][i][&apos;OBR.4&apos;][&apos;OBR.4.2&apos;] = msg[&apos;entry&apos;][i][&apos;universalServiceDescription&apos;].toString();
+}
+
+// log...
+logger.info(&quot;&gt;&gt;&gt; Messaggio per Camelia: &quot; + tmp.toString());
+logger.info(&quot;&lt;&lt;&lt; preparazione OMG&quot;);</string>
+              </entry>
+            </data>
+          </com.webreach.mirth.model.Step>
+        </steps>
+        <inboundTemplate>&lt;me4RTToCamelia xmlns=&quot;http://www.medas-solutions.it/mfw/camelia&quot;&gt;
+	&lt;entry id=&quot;0&quot;&gt;
+		&lt;placerOrderNumber&gt;PLACERORDERNUMBER&lt;/placerOrderNumber&gt;
+		&lt;placerGroupNumber/&gt;
+		&lt;fillerOrderNumber&gt;3&lt;/fillerOrderNumber&gt;
+		&lt;orderStatus&gt;CA&lt;/orderStatus&gt;
+		&lt;universalServiceIdentifier&gt;P1&lt;/universalServiceIdentifier&gt;
+		&lt;universalServiceDescription&gt;Desc P1&lt;/universalServiceDescription&gt;
+	&lt;/entry&gt;
+	&lt;entry id=&quot;1&quot;&gt;
+		&lt;placerOrderNumber&gt;PLACERORDERNUMBER&lt;/placerOrderNumber&gt;
+		&lt;placerGroupNumber&gt;PlacerGroupNumber&lt;/placerGroupNumber&gt;
+		&lt;fillerOrderNumber&gt;4&lt;/fillerOrderNumber&gt;
+		&lt;orderStatus&gt;CA&lt;/orderStatus&gt;
+		&lt;universalServiceIdentifier&gt;P2&lt;/universalServiceIdentifier&gt;
+		&lt;universalServiceDescription&gt;Desc P2&lt;/universalServiceDescription&gt;
+	&lt;/entry&gt;
+	&lt;entry id=&quot;2&quot;&gt;
+		&lt;placerOrderNumber&gt;PLACERORDERNUMBER&lt;/placerOrderNumber&gt;
+		&lt;placerGroupNumber&gt;PlacerGroupNumber&lt;/placerGroupNumber&gt;
+		&lt;fillerOrderNumber&gt;5&lt;/fillerOrderNumber&gt;
+		&lt;orderStatus&gt;CA&lt;/orderStatus&gt;
+		&lt;universalServiceIdentifier&gt;P3&lt;/universalServiceIdentifier&gt;
+		&lt;universalServiceDescription&gt;Desc P3&lt;/universalServiceDescription&gt;
+	&lt;/entry&gt;
+	&lt;entry id=&quot;3&quot;&gt;
+		&lt;placerOrderNumber&gt;PLACERORDERNUMBER&lt;/placerOrderNumber&gt;
+		&lt;placerGroupNumber&gt;PlacerGroupNumber&lt;/placerGroupNumber&gt;
+		&lt;fillerOrderNumber&gt;6&lt;/fillerOrderNumber&gt;
+		&lt;orderStatus&gt;CM&lt;/orderStatus&gt;
+		&lt;universalServiceIdentifier&gt;P4&lt;/universalServiceIdentifier&gt;
+		&lt;universalServiceDescription&gt;Desc P4&lt;/universalServiceDescription&gt;
+	&lt;/entry&gt;
+&lt;/me4RTToCamelia&gt;
+</inboundTemplate>
+        <outboundTemplate>MSH|^~\&amp;|ME4RT|MEDAS|CAMELIA|SANTER|201201261219||OMG^O19|12|P|2.5
+ORC|NW|674246|YYY|12B000000014|XXX
+OBR||||7089.7C.1^F53 PRIMA VISITA DI RADIOTERAPIA  INCLUSO: STESURA DEL PIANO DI TRATTAMENTO
+
+
+</outboundTemplate>
+        <inboundProtocol>XML</inboundProtocol>
+        <outboundProtocol>HL7V2</outboundProtocol>
+        <inboundProperties>
+          <property name="stripNamespaces">true</property>
+        </inboundProperties>
+        <outboundProperties>
+          <property name="handleRepetitions">true</property>
+          <property name="stripNamespaces">true</property>
+          <property name="convertLFtoCR">true</property>
+          <property name="useStrictValidation">false</property>
+          <property name="useStrictParser">false</property>
+        </outboundProperties>
+      </transformer>
+      <filter>
+        <rules/>
+      </filter>
+      <transportName>LLP Sender</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+    </com.webreach.mirth.model.Connector>
+  </destinationConnectors>
+  <properties>
+    <property name="initialState">started</property>
+    <property name="synchronous">true</property>
+    <property name="store_messages">true</property>
+    <property name="encryptData">false</property>
+    <property name="transactional">false</property>
+    <property name="max_message_age">5</property>
+    <property name="dont_store_filtered">false</property>
+    <property name="error_messages_only">false</property>
+  </properties>
+  <preprocessingScript>// Modify the message variable below to pre process data
+return message;</preprocessingScript>
+  <postprocessingScript>// This script executes once after a message has been processed
+return;</postprocessingScript>
+  <deployScript></deployScript>
+  <shutdownScript>// This script executes once when the mule engine is stopped
+// You only have access to the globalMap here to persist data
+
+// chiusura della connessone Oracle
+globalMap.get(&apos;mirthnotify.db.connection&apos;).close();
+return;</shutdownScript>
+</com.webreach.mirth.model.Channel>

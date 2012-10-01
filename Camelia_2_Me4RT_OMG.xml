@@ -1,0 +1,842 @@
+<com.webreach.mirth.model.Channel>
+  <id>81f335bd-49ce-4fe6-b47c-2fc64756df87</id>
+  <name>Camelia_2_Me4RT_OMG</name>
+  <description>Ricezione richieste da Camelia</description>
+  <enabled>true</enabled>
+  <version>1.8.2.4472</version>
+  <lastModified>
+    <time>1336557982374</time>
+    <timezone>Europe/Rome</timezone>
+  </lastModified>
+  <revision>141</revision>
+  <sourceConnector>
+    <name>sourceConnector</name>
+    <properties>
+      <property name="messageEnd">0x1C</property>
+      <property name="ackCodeError">AE</property>
+      <property name="messageStart">0x0B</property>
+      <property name="ackMsgRejected">Message Rejected.</property>
+      <property name="ackCodeRejected">AR</property>
+      <property name="receiveTimeout">0</property>
+      <property name="charEncoding">hex</property>
+      <property name="bufferSize">65536</property>
+      <property name="useStrictLLP">1</property>
+      <property name="reconnectInterval">5000</property>
+      <property name="waitForEndOfMessageCharacter">0</property>
+      <property name="sendACK">0</property>
+      <property name="port">6662</property>
+      <property name="ackOnNewConnection">0</property>
+      <property name="checkMSH15">0</property>
+      <property name="ackMsgSuccessful"></property>
+      <property name="tcpProtocolClassName">org.mule.providers.tcp.protocols.TcpProtocol</property>
+      <property name="responseFromTransformer">1</property>
+      <property name="segmentEnd">0x0D</property>
+      <property name="ackPort"></property>
+      <property name="charsetEncoding">DEFAULT_ENCODING</property>
+      <property name="host">127.0.0.1</property>
+      <property name="responseValue">ACK</property>
+      <property name="DataType">LLP Listener</property>
+      <property name="processBatchFiles">1</property>
+      <property name="ackMsgError">An Error Occured Processing Message.</property>
+      <property name="serverMode">1</property>
+      <property name="ackCodeSuccessful">AA</property>
+      <property name="ackIP"></property>
+      <property name="recordSeparator">0x0D</property>
+    </properties>
+    <transformer>
+      <steps>
+        <com.webreach.mirth.model.Step>
+          <sequenceNumber>0</sequenceNumber>
+          <name>Reading Data</name>
+          <script>// lettura informazioni utili...
+
+logger.info(&quot;&gt;&gt;&gt;&gt;&gt;&gt; Inizio elaborazione&quot;);
+
+// paziente...
+var numCod = msg[&apos;OMG_O19.PATIENT&apos;][&apos;PID&apos;][&apos;PID.3&apos;].length();
+for (var i=0; i &lt; numCod; i++) {
+	var repetition = msg[&apos;OMG_O19.PATIENT&apos;][&apos;PID&apos;][&apos;PID.3&apos;][i]
+	var tipoCod = repetition[&apos;CX.5&apos;].toString();
+	var valoCod = repetition[&apos;CX.1&apos;].toString();
+	if (tipoCod == &apos;PI&apos;) {
+		// codice paziente...
+		channelMap.put(&apos;patientID&apos;, valoCod);
+		logger.info(&apos;&gt;&gt;&gt; codice paziente = &apos; + valoCod);
+	}	
+	if ((tipoCod == &apos;NI&apos;) || (tipoCod == &apos;NN&apos;)){
+		var cfValo = new Packages.java.lang.String(valoCod);
+		// codice fiscale o STP...
+		if(cfValo.startsWith(&apos;STP&apos;) &amp;&amp; Packages.java.lang.Character.isDigit(cfValo.charAt(3))) {
+			channelMap.put(&apos;patientSTP&apos;, cfValo);
+			logger.info(&apos;&gt;&gt;&gt; STP = &apos; + cfValo);
+		}
+		else {
+			channelMap.put(&apos;patientFiscalID&apos;, cfValo);
+			logger.info(&apos;&gt;&gt;&gt; codice fiscale = &apos; + cfValo);
+		}
+	}
+	if (tipoCod == &apos;SS&apos;){
+		// tessera sanitaria...
+		channelMap.put(&apos;patientHealthID&apos;, valoCod);
+		logger.info(&apos;&gt;&gt;&gt; tessera sanitaria = &apos; + valoCod);
+	}	
+}
+var cognome = msg[&apos;OMG_O19.PATIENT&apos;][&apos;PID&apos;][&apos;PID.5&apos;][&apos;XPN.1&apos;][&apos;FN.1&apos;].toString();
+var nome = msg[&apos;OMG_O19.PATIENT&apos;][&apos;PID&apos;][&apos;PID.5&apos;][&apos;XPN.2&apos;].toString();
+var dnas = msg[&apos;OMG_O19.PATIENT&apos;][&apos;PID&apos;][&apos;PID.7&apos;][&apos;TS.1&apos;].toString();
+var dao = msg[&apos;OMG_O19.PATIENT&apos;][&apos;OMG_O19.PATIENT_VISIT&apos;][&apos;PV2&apos;][&apos;PV2.45&apos;][&apos;CE.1&apos;].toString();
+logger.info(&apos;&gt;&gt;&gt; cognome = &apos; + cognome);
+logger.info(&apos;&gt;&gt;&gt; nome = &apos; + nome);
+logger.info(&apos;&gt;&gt;&gt; data di nascita = &apos; + dnas);
+logger.info(&apos;&gt;&gt;&gt; informazioni oscuramento = &apos; + dao);
+channelMap.put(&apos;patientFamilyName&apos;, cognome);
+channelMap.put(&apos;patientGivenName&apos;, nome);
+channelMap.put(&apos;patientBirthDate&apos;, dnas);
+channelMap.put(&apos;DAO_advanceDirectiveCode&apos;, dao);
+
+// richiesta...
+var operazione_orderControl = msg[&apos;OMG_O19.ORDER&apos;][&apos;ORC&apos;][&apos;ORC.1&apos;].toString();
+var codiceCamelia_placerOrderNumber = msg[&apos;OMG_O19.ORDER&apos;][&apos;ORC&apos;][&apos;ORC.2&apos;][&apos;EI.1&apos;].toString();
+var codiceAppuntamentoCamelia_placerGroupNumber = msg[&apos;OMG_O19.ORDER&apos;][&apos;ORC&apos;][&apos;ORC.4&apos;][&apos;EI.1&apos;].toString();
+var IUP_parent = msg[&apos;OMG_O19.ORDER&apos;][&apos;ORC&apos;][&apos;ORC.8&apos;][&apos;EIP.1&apos;][&apos;EI.1&apos;].toString();
+var idMedico_orderingProvider = msg[&apos;OMG_O19.ORDER&apos;][&apos;ORC&apos;][&apos;ORC.12&apos;][&apos;XCN.1&apos;].toString();
+var servizio_enterersLocation = msg[&apos;OMG_O19.ORDER&apos;][&apos;ORC&apos;][&apos;ORC.13&apos;][&apos;PL.1&apos;].toString();
+
+// prestazione...
+// non sto a cambiare il nome variabile, ma l&apos;informazione ora la prendo dall&apos;OBR...
+// var dataOra_dateTimeOfTransaction = msg[&apos;OMG_O19.ORDER&apos;][&apos;ORC&apos;][&apos;ORC.9&apos;][&apos;TS.1&apos;].toString();
+var dataOra_dateTimeOfTransaction = msg[&apos;OMG_O19.ORDER&apos;][&apos;OBR&apos;][&apos;OBR.36&apos;][&apos;TS.1&apos;].toString();
+// impegnativa...
+var impegnativa_placerField1 = msg[&apos;OMG_O19.ORDER&apos;][&apos;OBR&apos;][&apos;OBR.18&apos;].toString();
+// quesito diagnostico...
+var quesitoDiagnostico_relevantClinicalInformation = msg[&apos;OMG_O19.ORDER&apos;][&apos;OBR&apos;][&apos;OBR.13&apos;].toString();
+var codicePrestazione_universalServiceIdentifier = msg[&apos;OMG_O19.ORDER&apos;][&apos;OBR&apos;][&apos;OBR.4&apos;][&apos;CE.1&apos;].toString();
+var descrizionePrestazione_universalServiceIdentifier = msg[&apos;OMG_O19.ORDER&apos;][&apos;OBR&apos;][&apos;OBR.4&apos;][&apos;CE.2&apos;].toString();
+
+// log...
+logger.info(&apos;&gt;&gt;&gt; operazione = &apos; + operazione_orderControl);
+logger.info(&apos;&gt;&gt;&gt; codice Camelia = &apos; + codiceCamelia_placerOrderNumber);
+logger.info(&apos;&gt;&gt;&gt; codice appuntamento Camelia = &apos; + codiceAppuntamentoCamelia_placerGroupNumber);
+logger.info(&apos;&gt;&gt;&gt; IUP = &apos; + IUP_parent);
+logger.info(&apos;&gt;&gt;&gt; data ora richiesta/prenotazione = &apos; + dataOra_dateTimeOfTransaction);
+logger.info(&apos;&gt;&gt;&gt; ID medico = &apos; + idMedico_orderingProvider);
+logger.info(&apos;&gt;&gt;&gt; Servizio/Reparto = &apos; + servizio_enterersLocation);
+logger.info(&apos;&gt;&gt;&gt; Impegnativa = &apos; + impegnativa_placerField1);
+logger.info(&apos;&gt;&gt;&gt; Quesito diagnostico = &apos; + quesitoDiagnostico_relevantClinicalInformation);
+logger.info(&apos;&gt;&gt;&gt; Codice prestazione = &apos; + codicePrestazione_universalServiceIdentifier);
+logger.info(&apos;&gt;&gt;&gt; Descrizione prestazione = &apos; + descrizionePrestazione_universalServiceIdentifier);
+
+// memorizzo...
+channelMap.put(&apos;operazione_orderControl&apos;, operazione_orderControl);
+channelMap.put(&apos;codiceCamelia_placerOrderNumber&apos;, codiceCamelia_placerOrderNumber);
+channelMap.put(&apos;codiceAppuntamentoCamelia_placerGroupNumber&apos;, codiceAppuntamentoCamelia_placerGroupNumber);
+channelMap.put(&apos;IUP_parent&apos;, IUP_parent);
+channelMap.put(&apos;dataOra_dateTimeOfTransaction&apos;, dataOra_dateTimeOfTransaction);
+channelMap.put(&apos;idMedico_orderingProvider&apos;, idMedico_orderingProvider);
+channelMap.put(&apos;servizio_enterersLocation&apos;, servizio_enterersLocation);
+channelMap.put(&apos;impegnativa_placerField1&apos;, impegnativa_placerField1);
+channelMap.put(&apos;quesitoDiagnostico_relevantClinicalInformation&apos;, quesitoDiagnostico_relevantClinicalInformation);
+channelMap.put(&apos;codicePrestazione_universalServiceIdentifier&apos;, codicePrestazione_universalServiceIdentifier);
+channelMap.put(&apos;descrizionePrestazione_universalServiceIdentifier&apos;, descrizionePrestazione_universalServiceIdentifier);</script>
+          <type>JavaScript</type>
+          <data class="map">
+            <entry>
+              <string>Script</string>
+              <string>// lettura informazioni utili...
+
+logger.info(&quot;&gt;&gt;&gt;&gt;&gt;&gt; Inizio elaborazione&quot;);
+
+// paziente...
+var numCod = msg[&apos;OMG_O19.PATIENT&apos;][&apos;PID&apos;][&apos;PID.3&apos;].length();
+for (var i=0; i &lt; numCod; i++) {
+	var repetition = msg[&apos;OMG_O19.PATIENT&apos;][&apos;PID&apos;][&apos;PID.3&apos;][i]
+	var tipoCod = repetition[&apos;CX.5&apos;].toString();
+	var valoCod = repetition[&apos;CX.1&apos;].toString();
+	if (tipoCod == &apos;PI&apos;) {
+		// codice paziente...
+		channelMap.put(&apos;patientID&apos;, valoCod);
+		logger.info(&apos;&gt;&gt;&gt; codice paziente = &apos; + valoCod);
+	}	
+	if ((tipoCod == &apos;NI&apos;) || (tipoCod == &apos;NN&apos;)){
+		var cfValo = new Packages.java.lang.String(valoCod);
+		// codice fiscale o STP...
+		if(cfValo.startsWith(&apos;STP&apos;) &amp;&amp; Packages.java.lang.Character.isDigit(cfValo.charAt(3))) {
+			channelMap.put(&apos;patientSTP&apos;, cfValo);
+			logger.info(&apos;&gt;&gt;&gt; STP = &apos; + cfValo);
+		}
+		else {
+			channelMap.put(&apos;patientFiscalID&apos;, cfValo);
+			logger.info(&apos;&gt;&gt;&gt; codice fiscale = &apos; + cfValo);
+		}
+	}
+	if (tipoCod == &apos;SS&apos;){
+		// tessera sanitaria...
+		channelMap.put(&apos;patientHealthID&apos;, valoCod);
+		logger.info(&apos;&gt;&gt;&gt; tessera sanitaria = &apos; + valoCod);
+	}	
+}
+var cognome = msg[&apos;OMG_O19.PATIENT&apos;][&apos;PID&apos;][&apos;PID.5&apos;][&apos;XPN.1&apos;][&apos;FN.1&apos;].toString();
+var nome = msg[&apos;OMG_O19.PATIENT&apos;][&apos;PID&apos;][&apos;PID.5&apos;][&apos;XPN.2&apos;].toString();
+var dnas = msg[&apos;OMG_O19.PATIENT&apos;][&apos;PID&apos;][&apos;PID.7&apos;][&apos;TS.1&apos;].toString();
+var dao = msg[&apos;OMG_O19.PATIENT&apos;][&apos;OMG_O19.PATIENT_VISIT&apos;][&apos;PV2&apos;][&apos;PV2.45&apos;][&apos;CE.1&apos;].toString();
+logger.info(&apos;&gt;&gt;&gt; cognome = &apos; + cognome);
+logger.info(&apos;&gt;&gt;&gt; nome = &apos; + nome);
+logger.info(&apos;&gt;&gt;&gt; data di nascita = &apos; + dnas);
+logger.info(&apos;&gt;&gt;&gt; informazioni oscuramento = &apos; + dao);
+channelMap.put(&apos;patientFamilyName&apos;, cognome);
+channelMap.put(&apos;patientGivenName&apos;, nome);
+channelMap.put(&apos;patientBirthDate&apos;, dnas);
+channelMap.put(&apos;DAO_advanceDirectiveCode&apos;, dao);
+
+// richiesta...
+var operazione_orderControl = msg[&apos;OMG_O19.ORDER&apos;][&apos;ORC&apos;][&apos;ORC.1&apos;].toString();
+var codiceCamelia_placerOrderNumber = msg[&apos;OMG_O19.ORDER&apos;][&apos;ORC&apos;][&apos;ORC.2&apos;][&apos;EI.1&apos;].toString();
+var codiceAppuntamentoCamelia_placerGroupNumber = msg[&apos;OMG_O19.ORDER&apos;][&apos;ORC&apos;][&apos;ORC.4&apos;][&apos;EI.1&apos;].toString();
+var IUP_parent = msg[&apos;OMG_O19.ORDER&apos;][&apos;ORC&apos;][&apos;ORC.8&apos;][&apos;EIP.1&apos;][&apos;EI.1&apos;].toString();
+var idMedico_orderingProvider = msg[&apos;OMG_O19.ORDER&apos;][&apos;ORC&apos;][&apos;ORC.12&apos;][&apos;XCN.1&apos;].toString();
+var servizio_enterersLocation = msg[&apos;OMG_O19.ORDER&apos;][&apos;ORC&apos;][&apos;ORC.13&apos;][&apos;PL.1&apos;].toString();
+
+// prestazione...
+// non sto a cambiare il nome variabile, ma l&apos;informazione ora la prendo dall&apos;OBR...
+// var dataOra_dateTimeOfTransaction = msg[&apos;OMG_O19.ORDER&apos;][&apos;ORC&apos;][&apos;ORC.9&apos;][&apos;TS.1&apos;].toString();
+var dataOra_dateTimeOfTransaction = msg[&apos;OMG_O19.ORDER&apos;][&apos;OBR&apos;][&apos;OBR.36&apos;][&apos;TS.1&apos;].toString();
+// impegnativa...
+var impegnativa_placerField1 = msg[&apos;OMG_O19.ORDER&apos;][&apos;OBR&apos;][&apos;OBR.18&apos;].toString();
+// quesito diagnostico...
+var quesitoDiagnostico_relevantClinicalInformation = msg[&apos;OMG_O19.ORDER&apos;][&apos;OBR&apos;][&apos;OBR.13&apos;].toString();
+var codicePrestazione_universalServiceIdentifier = msg[&apos;OMG_O19.ORDER&apos;][&apos;OBR&apos;][&apos;OBR.4&apos;][&apos;CE.1&apos;].toString();
+var descrizionePrestazione_universalServiceIdentifier = msg[&apos;OMG_O19.ORDER&apos;][&apos;OBR&apos;][&apos;OBR.4&apos;][&apos;CE.2&apos;].toString();
+
+// log...
+logger.info(&apos;&gt;&gt;&gt; operazione = &apos; + operazione_orderControl);
+logger.info(&apos;&gt;&gt;&gt; codice Camelia = &apos; + codiceCamelia_placerOrderNumber);
+logger.info(&apos;&gt;&gt;&gt; codice appuntamento Camelia = &apos; + codiceAppuntamentoCamelia_placerGroupNumber);
+logger.info(&apos;&gt;&gt;&gt; IUP = &apos; + IUP_parent);
+logger.info(&apos;&gt;&gt;&gt; data ora richiesta/prenotazione = &apos; + dataOra_dateTimeOfTransaction);
+logger.info(&apos;&gt;&gt;&gt; ID medico = &apos; + idMedico_orderingProvider);
+logger.info(&apos;&gt;&gt;&gt; Servizio/Reparto = &apos; + servizio_enterersLocation);
+logger.info(&apos;&gt;&gt;&gt; Impegnativa = &apos; + impegnativa_placerField1);
+logger.info(&apos;&gt;&gt;&gt; Quesito diagnostico = &apos; + quesitoDiagnostico_relevantClinicalInformation);
+logger.info(&apos;&gt;&gt;&gt; Codice prestazione = &apos; + codicePrestazione_universalServiceIdentifier);
+logger.info(&apos;&gt;&gt;&gt; Descrizione prestazione = &apos; + descrizionePrestazione_universalServiceIdentifier);
+
+// memorizzo...
+channelMap.put(&apos;operazione_orderControl&apos;, operazione_orderControl);
+channelMap.put(&apos;codiceCamelia_placerOrderNumber&apos;, codiceCamelia_placerOrderNumber);
+channelMap.put(&apos;codiceAppuntamentoCamelia_placerGroupNumber&apos;, codiceAppuntamentoCamelia_placerGroupNumber);
+channelMap.put(&apos;IUP_parent&apos;, IUP_parent);
+channelMap.put(&apos;dataOra_dateTimeOfTransaction&apos;, dataOra_dateTimeOfTransaction);
+channelMap.put(&apos;idMedico_orderingProvider&apos;, idMedico_orderingProvider);
+channelMap.put(&apos;servizio_enterersLocation&apos;, servizio_enterersLocation);
+channelMap.put(&apos;impegnativa_placerField1&apos;, impegnativa_placerField1);
+channelMap.put(&apos;quesitoDiagnostico_relevantClinicalInformation&apos;, quesitoDiagnostico_relevantClinicalInformation);
+channelMap.put(&apos;codicePrestazione_universalServiceIdentifier&apos;, codicePrestazione_universalServiceIdentifier);
+channelMap.put(&apos;descrizionePrestazione_universalServiceIdentifier&apos;, descrizionePrestazione_universalServiceIdentifier);</string>
+            </entry>
+          </data>
+        </com.webreach.mirth.model.Step>
+      </steps>
+      <inboundTemplate>MSH|^~\&amp;|CAMELIA|SANTER|ME4RT|MEDAS|201201261219||OMG^O19|12|P|2.5
+PID|||3029759^^^^PI^BDA~^^^^NPI^^^^&amp;&amp;IT~999AV106^^^^SS~CTTCTD54T01G337R^^^^NN||CITTASISS^CENTODICIOTTO^^^^^L||19541201|M|||&amp;XXXXXXXXXXX,1&amp;1^^E507^LECCO^LC^^L^^097042^22053~&amp;V. CARDUCCI,7&amp;7^^E507^PARMA^PR^^H^^097042^43100~^^LECCO^LC^^^BDL^^034027^G337||1234^^PH^^^^^^^^^1234|||||CTTCTD54T01G337R|999AV106||||034027
+PD1|||^^^^^^ASLD^^^030305
+PV1||O|F53_RADIOTER^^^^^^RTPV^^^IMMAGINI|||||||||||||||||||||||||||||||||||||||||201201261220
+ORC|NW|674246||12B000000014|||1^^^^^R|1234567890|201201261055|SANTER^A^B||^^^^^^^4||||||VPN
+TQ1||1|||||||R||||0
+OBR||674246||7089.7C.1^F53 PRIMA VISITA DI RADIOTERAPIA  INCLUSO: STESURA DEL PIANO DI TRATTAMENTO||201201261055|||||||prova quesito|||||0000000000000123||||||70|||1^^^^^R||||Z|||||201201311200||||||||||0^^99CSP~RTPV^^99SER~F53^^99CDC
+BLG||NC|048|000</inboundTemplate>
+      <outboundTemplate></outboundTemplate>
+      <inboundProtocol>HL7V2</inboundProtocol>
+      <outboundProtocol>HL7V2</outboundProtocol>
+      <inboundProperties>
+        <property name="handleRepetitions">true</property>
+        <property name="stripNamespaces">true</property>
+        <property name="convertLFtoCR">true</property>
+        <property name="useStrictValidation">false</property>
+        <property name="useStrictParser">true</property>
+      </inboundProperties>
+      <outboundProperties/>
+    </transformer>
+    <filter>
+      <rules/>
+    </filter>
+    <transportName>LLP Listener</transportName>
+    <mode>SOURCE</mode>
+    <enabled>true</enabled>
+  </sourceConnector>
+  <destinationConnectors>
+    <com.webreach.mirth.model.Connector>
+      <name>Log Message</name>
+      <properties>
+        <property name="secure">1</property>
+        <property name="scheme">file</property>
+        <property name="binary">0</property>
+        <property name="username">anonymous</property>
+        <property name="outputPattern">Camelia_2_Me4RT_OMG.log</property>
+        <property name="validateConnections">1</property>
+        <property name="DataType">File Writer</property>
+        <property name="FTPAnonymous">1</property>
+        <property name="charsetEncoding">DEFAULT_ENCODING</property>
+        <property name="password">anonymous</property>
+        <property name="passive">1</property>
+        <property name="template">${message.rawData}</property>
+        <property name="outputAppend">1</property>
+        <property name="host">/home/medas/camelia/logs</property>
+      </properties>
+      <transformer>
+        <steps>
+          <com.webreach.mirth.model.Step>
+            <sequenceNumber>0</sequenceNumber>
+            <name>Log messaggio</name>
+            <script>logger.info(&quot;&gt;&gt;&gt; Messaggio da Camelia: &quot; + msg.toString());</script>
+            <type>JavaScript</type>
+            <data class="map">
+              <entry>
+                <string>Script</string>
+                <string>logger.info(&quot;&gt;&gt;&gt; Messaggio da Camelia: &quot; + msg.toString());</string>
+              </entry>
+            </data>
+          </com.webreach.mirth.model.Step>
+        </steps>
+        <inboundTemplate></inboundTemplate>
+        <outboundTemplate></outboundTemplate>
+        <inboundProtocol>HL7V2</inboundProtocol>
+        <outboundProtocol>HL7V2</outboundProtocol>
+        <inboundProperties/>
+        <outboundProperties/>
+      </transformer>
+      <filter>
+        <rules/>
+      </filter>
+      <transportName>File Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+    </com.webreach.mirth.model.Connector>
+    <com.webreach.mirth.model.Connector>
+      <name>Manage WS</name>
+      <properties>
+        <property name="method">cameliaToMe4RT</property>
+        <property name="wsdlUrl">http://10.4.0.150:8080/me4rt-0.1/services/cameliaWs?wsdl</property>
+        <property name="attachmentNames">&lt;list/&gt;</property>
+        <property name="replyChannelId">sink</property>
+        <property name="definition">H4sIAAAAAAAAAFvzloG1uIhBIzk/V688NakoNTE5Qy83s6gESOanpObolRfrhQe7pKZl5mWWZObnHTqxXXK6fcsjJgZmHwYeoK6CnNSKkMqC1OISBn6frMSyRP3Skswcfd/EAmsfBq78gtSiRJC+4kKGOgZGHwah4tSisszkVNe8lIL8zLyS0CDPEgYhiMacxLx0/eCSosy8dOuKggKgswRB4nogA/U8EoszgIayst86eFgs4SIzA5MbA1dOfmKKW2JySX6RJwNnSUZRanFGfk5KRYG9AwMI8JRzAEkBELOiAAC+7lTJ6gAAAA==</property>
+        <property name="attachmentContents">&lt;list/&gt;</property>
+        <property name="soapEnvelope">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-16&quot;?&gt;
+&lt;soap:Envelope xmlns:soap=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot; xmlns:soapenc=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot;&gt;
+&lt;soap:Body&gt;&#x0D;
+  &lt;cameliaToMe4RT xmlns=&quot;http://www.medas-solutions.it/mfw/camelia&quot;&gt;&#x0D;
+    ${entryList}
+  &lt;/cameliaToMe4RT&gt;&#x0D;
+&lt;/soap:Body&gt;&#x0D;
+&lt;/soap:Envelope&gt;</property>
+        <property name="serviceEndpoint">http://10.4.0.150:8080/me4rt-0.1/services/cameliaWs</property>
+        <property name="DataType">SOAP Sender</property>
+        <property name="usePersistentQueues">0</property>
+        <property name="rotateQueue">0</property>
+        <property name="soapActionURI">http://www.medas-solutions.it/mfw/camelia/Create</property>
+        <property name="reconnectMillisecs">10000</property>
+        <property name="attachmentTypes">&lt;list/&gt;</property>
+        <property name="host">axis:http://10.4.0.150:8080/me4rt-0.1/services/cameliaWs?method=cameliaToMe4RT</property>
+        <property name="soapGenerateEnvelope">1</property>
+      </properties>
+      <transformer>
+        <steps>
+          <com.webreach.mirth.model.Step>
+            <sequenceNumber>0</sequenceNumber>
+            <name>Building entry list</name>
+            <script>/* 
+
+la struttura entry list e&apos; siffatta:
+
+&lt;entry xmlns=&quot;&quot;&gt;&#x0D;
+  &lt;key/&gt;&#x0D;
+  &lt;value/&gt;&#x0D;
+&lt;/entry&gt;
+
+*/
+
+// costruzione...
+var entryList = &apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;OrderControl&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;operazione_orderControl&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; + 
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientID&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientID&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientFiscalID&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientFiscalID&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientSTP&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientSTP&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientHealthID&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientHealthID&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientFamilyName&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientFamilyName&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientGivenName&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientGivenName&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientBirthDate&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientBirthDate&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PlacerOrderNumber&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;codiceCamelia_placerOrderNumber&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PlacerGroupNumber&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;codiceAppuntamentoCamelia_placerGroupNumber&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;Parent&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;IUP_parent&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;DateTimeOfTransaction&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;dataOra_dateTimeOfTransaction&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;OrderingProvider&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;idMedico_orderingProvider&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;EnterersLocation&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;servizio_enterersLocation&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;AdvanceDirectiveCode&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;DAO_advanceDirectiveCode&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PlacerField1&lt;/key&gt;&lt;value&gt;&apos; +$(&apos;impegnativa_placerField1&apos;)  + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;RelevantClinicalInformation&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;quesitoDiagnostico_relevantClinicalInformation&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;UniversalServiceIdentifier&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;codicePrestazione_universalServiceIdentifier&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;UniversalServiceDescription&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;descrizionePrestazione_universalServiceIdentifier&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos;;
+
+// log...
+logger.info(&quot;&gt;&gt;&gt; entryList da inviare = &quot; + entryList);
+
+// memorizzo...
+channelMap.put(&apos;entryList&apos;, entryList);</script>
+            <type>JavaScript</type>
+            <data class="map">
+              <entry>
+                <string>Script</string>
+                <string>/* 
+
+la struttura entry list e&apos; siffatta:
+
+&lt;entry xmlns=&quot;&quot;&gt;&#x0D;
+  &lt;key/&gt;&#x0D;
+  &lt;value/&gt;&#x0D;
+&lt;/entry&gt;
+
+*/
+
+// costruzione...
+var entryList = &apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;OrderControl&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;operazione_orderControl&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; + 
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientID&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientID&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientFiscalID&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientFiscalID&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientSTP&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientSTP&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientHealthID&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientHealthID&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientFamilyName&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientFamilyName&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientGivenName&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientGivenName&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientBirthDate&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientBirthDate&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PlacerOrderNumber&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;codiceCamelia_placerOrderNumber&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PlacerGroupNumber&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;codiceAppuntamentoCamelia_placerGroupNumber&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;Parent&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;IUP_parent&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;DateTimeOfTransaction&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;dataOra_dateTimeOfTransaction&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;OrderingProvider&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;idMedico_orderingProvider&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;EnterersLocation&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;servizio_enterersLocation&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;AdvanceDirectiveCode&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;DAO_advanceDirectiveCode&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PlacerField1&lt;/key&gt;&lt;value&gt;&apos; +$(&apos;impegnativa_placerField1&apos;)  + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;RelevantClinicalInformation&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;quesitoDiagnostico_relevantClinicalInformation&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;UniversalServiceIdentifier&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;codicePrestazione_universalServiceIdentifier&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;UniversalServiceDescription&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;descrizionePrestazione_universalServiceIdentifier&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos;;
+
+// log...
+logger.info(&quot;&gt;&gt;&gt; entryList da inviare = &quot; + entryList);
+
+// memorizzo...
+channelMap.put(&apos;entryList&apos;, entryList);</string>
+              </entry>
+            </data>
+          </com.webreach.mirth.model.Step>
+        </steps>
+        <inboundTemplate></inboundTemplate>
+        <outboundTemplate></outboundTemplate>
+        <inboundProtocol>HL7V2</inboundProtocol>
+        <outboundProtocol>HL7V2</outboundProtocol>
+        <inboundProperties/>
+        <outboundProperties/>
+      </transformer>
+      <filter>
+        <rules/>
+      </filter>
+      <transportName>SOAP Sender</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+    </com.webreach.mirth.model.Connector>
+    <com.webreach.mirth.model.Connector>
+      <name>Manage out WS and ACK</name>
+      <properties>
+        <property name="script">
+logger.info(&quot;&lt;&lt;&lt;&lt;&lt;&lt; Fine elaborazione&quot;);</property>
+        <property name="DataType">JavaScript Writer</property>
+        <property name="host">sink</property>
+      </properties>
+      <transformer>
+        <steps>
+          <com.webreach.mirth.model.Step>
+            <sequenceNumber>0</sequenceNumber>
+            <name>Reading WS response</name>
+            <script>// lettura risposta del WS...
+var outWS = responseMap.get(&apos;Manage WS&apos;).toString();
+logger.info(&apos;&lt;&lt;&lt; WS response = &apos; + outWS);
+
+// flag risposta...
+var responseStatus;
+if (outWS.startsWith(&apos;SUCCESS&apos;))
+	responseStatus = &apos;OK&apos;;
+else
+	responseStatus = &apos;NO&apos;;
+channelMap.put(&apos;responseStatus&apos;,responseStatus);
+logger.info(&apos;&lt;&lt;&lt; WS responseStatus = &apos; + responseStatus);
+
+// gestione risposta positiva...
+if (responseStatus == &apos;OK&apos;) {
+	var messageRes = responseMap.get(&apos;Manage WS&apos;).getMessage();
+	logger.info(&apos;&lt;&lt;&lt; WS message = &apos; + messageRes);
+	// unescaping del messaggio...
+	messageRes = new Packages.java.lang.String(messageRes.toString());
+	messageRes = messageRes.replaceAll(&apos;&amp;lt;&apos;,&apos;&lt;&apos;);
+	messageRes = messageRes.replaceAll(&apos;&amp;gt;&apos;,&apos;&gt;&apos;);
+	messageRes = messageRes.replaceAll(&apos;&amp;quot;&apos;,&apos;&quot;&apos;);
+	logger.info(&apos;&lt;&lt;&lt; WS unescaped message = &apos; + messageRes);
+	// ricerca parte significativa del messaggio...
+	var from = messageRes.indexOf(&apos;&lt;response&gt;&apos;);
+	var to = messageRes.indexOf(&apos;&lt;/response&gt;&apos;);
+	messageRes = messageRes.substring(from, to + 11); 
+	logger.info(&apos;&lt;&lt;&lt; WS data message = &apos; + messageRes);
+	channelMap.put(&apos;response&apos;, messageRes);	
+}</script>
+            <type>JavaScript</type>
+            <data class="map">
+              <entry>
+                <string>Script</string>
+                <string>// lettura risposta del WS...
+var outWS = responseMap.get(&apos;Manage WS&apos;).toString();
+logger.info(&apos;&lt;&lt;&lt; WS response = &apos; + outWS);
+
+// flag risposta...
+var responseStatus;
+if (outWS.startsWith(&apos;SUCCESS&apos;))
+	responseStatus = &apos;OK&apos;;
+else
+	responseStatus = &apos;NO&apos;;
+channelMap.put(&apos;responseStatus&apos;,responseStatus);
+logger.info(&apos;&lt;&lt;&lt; WS responseStatus = &apos; + responseStatus);
+
+// gestione risposta positiva...
+if (responseStatus == &apos;OK&apos;) {
+	var messageRes = responseMap.get(&apos;Manage WS&apos;).getMessage();
+	logger.info(&apos;&lt;&lt;&lt; WS message = &apos; + messageRes);
+	// unescaping del messaggio...
+	messageRes = new Packages.java.lang.String(messageRes.toString());
+	messageRes = messageRes.replaceAll(&apos;&amp;lt;&apos;,&apos;&lt;&apos;);
+	messageRes = messageRes.replaceAll(&apos;&amp;gt;&apos;,&apos;&gt;&apos;);
+	messageRes = messageRes.replaceAll(&apos;&amp;quot;&apos;,&apos;&quot;&apos;);
+	logger.info(&apos;&lt;&lt;&lt; WS unescaped message = &apos; + messageRes);
+	// ricerca parte significativa del messaggio...
+	var from = messageRes.indexOf(&apos;&lt;response&gt;&apos;);
+	var to = messageRes.indexOf(&apos;&lt;/response&gt;&apos;);
+	messageRes = messageRes.substring(from, to + 11); 
+	logger.info(&apos;&lt;&lt;&lt; WS data message = &apos; + messageRes);
+	channelMap.put(&apos;response&apos;, messageRes);	
+}</string>
+              </entry>
+            </data>
+          </com.webreach.mirth.model.Step>
+          <com.webreach.mirth.model.Step>
+            <sequenceNumber>1</sequenceNumber>
+            <name>Creating ACK</name>
+            <script>/*
+// log...
+logger.info(&quot;&gt;&gt;&gt; preparazione ACK per messaggio di ID = &quot; + msg[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;].toString());
+
+tmp[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSH.9.1&apos;] = &apos;ACK&apos;;
+tmp[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSH.9.2&apos;] = msg[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSG.2&apos;].toString();
+tmp[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSH.9.3&apos;] = &apos;ACK&apos;;
+tmp[&apos;MSH&apos;][&apos;MSH.7&apos;][&apos;MSH.7.1&apos;] = DateUtil.getCurrentDate(&apos;yyyyMMddhhmmss&apos;);
+tmp[&apos;MSA&apos;][&apos;MSA.2&apos;][&apos;MSA.2.1&apos;] = msg[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;].toString();
+tmp[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;] = Packages.ca.uhn.hl7v2.util.MessageIDGenerator.getInstance().getNewID();
+responseMap.put(&apos;ACK&apos;, ResponseFactory.getSuccessResponse(SerializerFactory.getHL7Serializer(false, false, false).fromXML(tmp)));
+
+// log...
+logger.info(&quot;&lt;&lt;&lt; ACK inviato&quot;);
+*/
+
+var retEvento = &apos;&apos;;
+var retMessage = &apos;&apos;;
+if ($(&apos;responseStatus&apos;) == &apos;OK&apos;) {
+	// ricerca evento...
+	var messageResX = new XML($(&apos;response&apos;));
+	var retCode = messageResX[&apos;code&apos;].toString();
+	logger.info(&apos;&lt;&lt;&lt; WS code = &apos; + retCode);	
+	if (retCode == &apos;1&apos;) {
+		// ok, estraggo evento...
+		retCode = &apos;AA&apos;;
+		retEvento = messageResX[&apos;eventNumber&apos;].toString();
+		logger.info(&apos;&lt;&lt;&lt; WS evento = &apos; + retEvento);
+	} else {
+		// no, gestione errore...	
+		retCode = &apos;AE&apos;;
+		retMessage = messageResX[&apos;message&apos;].toString();
+		logger.info(&apos;&lt;&lt;&lt; WS message = &apos; + retMessage);
+	}
+} else {
+	retCode = &apos;AE&apos;;	
+	retMessage = &apos;Errore durante la chiamata al servizio Me4RT&apos;;
+}
+
+// log...
+logger.info(&quot;&gt;&gt;&gt; preparazione ACK per messaggio di ID = &quot; + msg[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;].toString());
+
+tmp[&apos;MSH&apos;][&apos;MSH.7&apos;][&apos;MSH.7.1&apos;] = DateUtil.getCurrentDate(&apos;yyyyMMddhhmmss&apos;);
+tmp[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;] = Packages.ca.uhn.hl7v2.util.MessageIDGenerator.getInstance().getNewID();
+tmp[&apos;MSA&apos;][&apos;MSA.1&apos;][&apos;MSA.1.1&apos;] = retCode; 
+tmp[&apos;MSA&apos;][&apos;MSA.2&apos;][&apos;MSA.2.1&apos;] = msg[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;].toString();
+tmp[&apos;MSA&apos;][&apos;MSA.3&apos;][&apos;MSA.3.1&apos;] = retMessage;
+
+// il PID e&apos; uguale...
+tmp.PID = msg.PID;
+// potevo fare anche cosi&apos;, e&apos; piu&apos; generico...
+// tmp[&apos;PID&apos;] = new XML(msg[&apos;OMG_O19.PATIENT&apos;][&apos;PID&apos;].toString());
+
+tmp[&apos;ORC&apos;][&apos;ORC.1&apos;][&apos;ORC.1.1&apos;] = $(&apos;operazione_orderControl&apos;);
+tmp[&apos;ORC&apos;][&apos;ORC.2&apos;][&apos;ORC.2.1&apos;] = $(&apos;codiceCamelia_placerOrderNumber&apos;);
+tmp[&apos;ORC&apos;][&apos;ORC.3&apos;][&apos;ORC.3.1&apos;] = retEvento;
+tmp[&apos;ORC&apos;][&apos;ORC.4&apos;][&apos;ORC.4.1&apos;] = $(&apos;codiceAppuntamentoCamelia_placerGroupNumber&apos;);
+
+// i segmenti sottostanti l&apos;ORC sono uguali...
+// tmp.TQ1 = msg.TQ1;
+tmp.OBR = msg.OBR;
+tmp[&apos;OBR&apos;][&apos;OBR.3&apos;][&apos;OBR.3.1&apos;] = retEvento;
+// tmp.BLG = msg.BLG;
+
+responseMap.put(&apos;ACK&apos;, ResponseFactory.getSuccessResponse(SerializerFactory.getHL7Serializer(false, false, false).fromXML(tmp)));
+
+// log...
+logger.info(&quot;&lt;&lt;&lt; ACK inviato&quot;);</script>
+            <type>JavaScript</type>
+            <data class="map">
+              <entry>
+                <string>Script</string>
+                <string>/*
+// log...
+logger.info(&quot;&gt;&gt;&gt; preparazione ACK per messaggio di ID = &quot; + msg[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;].toString());
+
+tmp[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSH.9.1&apos;] = &apos;ACK&apos;;
+tmp[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSH.9.2&apos;] = msg[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSG.2&apos;].toString();
+tmp[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSH.9.3&apos;] = &apos;ACK&apos;;
+tmp[&apos;MSH&apos;][&apos;MSH.7&apos;][&apos;MSH.7.1&apos;] = DateUtil.getCurrentDate(&apos;yyyyMMddhhmmss&apos;);
+tmp[&apos;MSA&apos;][&apos;MSA.2&apos;][&apos;MSA.2.1&apos;] = msg[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;].toString();
+tmp[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;] = Packages.ca.uhn.hl7v2.util.MessageIDGenerator.getInstance().getNewID();
+responseMap.put(&apos;ACK&apos;, ResponseFactory.getSuccessResponse(SerializerFactory.getHL7Serializer(false, false, false).fromXML(tmp)));
+
+// log...
+logger.info(&quot;&lt;&lt;&lt; ACK inviato&quot;);
+*/
+
+var retEvento = &apos;&apos;;
+var retMessage = &apos;&apos;;
+if ($(&apos;responseStatus&apos;) == &apos;OK&apos;) {
+	// ricerca evento...
+	var messageResX = new XML($(&apos;response&apos;));
+	var retCode = messageResX[&apos;code&apos;].toString();
+	logger.info(&apos;&lt;&lt;&lt; WS code = &apos; + retCode);	
+	if (retCode == &apos;1&apos;) {
+		// ok, estraggo evento...
+		retCode = &apos;AA&apos;;
+		retEvento = messageResX[&apos;eventNumber&apos;].toString();
+		logger.info(&apos;&lt;&lt;&lt; WS evento = &apos; + retEvento);
+	} else {
+		// no, gestione errore...	
+		retCode = &apos;AE&apos;;
+		retMessage = messageResX[&apos;message&apos;].toString();
+		logger.info(&apos;&lt;&lt;&lt; WS message = &apos; + retMessage);
+	}
+} else {
+	retCode = &apos;AE&apos;;	
+	retMessage = &apos;Errore durante la chiamata al servizio Me4RT&apos;;
+}
+
+// log...
+logger.info(&quot;&gt;&gt;&gt; preparazione ACK per messaggio di ID = &quot; + msg[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;].toString());
+
+tmp[&apos;MSH&apos;][&apos;MSH.7&apos;][&apos;MSH.7.1&apos;] = DateUtil.getCurrentDate(&apos;yyyyMMddhhmmss&apos;);
+tmp[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;] = Packages.ca.uhn.hl7v2.util.MessageIDGenerator.getInstance().getNewID();
+tmp[&apos;MSA&apos;][&apos;MSA.1&apos;][&apos;MSA.1.1&apos;] = retCode; 
+tmp[&apos;MSA&apos;][&apos;MSA.2&apos;][&apos;MSA.2.1&apos;] = msg[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;].toString();
+tmp[&apos;MSA&apos;][&apos;MSA.3&apos;][&apos;MSA.3.1&apos;] = retMessage;
+
+// il PID e&apos; uguale...
+tmp.PID = msg.PID;
+// potevo fare anche cosi&apos;, e&apos; piu&apos; generico...
+// tmp[&apos;PID&apos;] = new XML(msg[&apos;OMG_O19.PATIENT&apos;][&apos;PID&apos;].toString());
+
+tmp[&apos;ORC&apos;][&apos;ORC.1&apos;][&apos;ORC.1.1&apos;] = $(&apos;operazione_orderControl&apos;);
+tmp[&apos;ORC&apos;][&apos;ORC.2&apos;][&apos;ORC.2.1&apos;] = $(&apos;codiceCamelia_placerOrderNumber&apos;);
+tmp[&apos;ORC&apos;][&apos;ORC.3&apos;][&apos;ORC.3.1&apos;] = retEvento;
+tmp[&apos;ORC&apos;][&apos;ORC.4&apos;][&apos;ORC.4.1&apos;] = $(&apos;codiceAppuntamentoCamelia_placerGroupNumber&apos;);
+
+// i segmenti sottostanti l&apos;ORC sono uguali...
+// tmp.TQ1 = msg.TQ1;
+tmp.OBR = msg.OBR;
+tmp[&apos;OBR&apos;][&apos;OBR.3&apos;][&apos;OBR.3.1&apos;] = retEvento;
+// tmp.BLG = msg.BLG;
+
+responseMap.put(&apos;ACK&apos;, ResponseFactory.getSuccessResponse(SerializerFactory.getHL7Serializer(false, false, false).fromXML(tmp)));
+
+// log...
+logger.info(&quot;&lt;&lt;&lt; ACK inviato&quot;);</string>
+              </entry>
+            </data>
+          </com.webreach.mirth.model.Step>
+        </steps>
+        <inboundTemplate></inboundTemplate>
+        <outboundTemplate>MSH|^~\&amp;|ME4RT|MEDAS|CAMELIA|SANTER|20111014122710||ORG^O20|20111014122710|P|2.5
+MSA|AA|III|OK
+PID|||0000009^^^^PI^BDA~^^^^SS~ZZZZZZZZZZZZZZZZZ^^^^NN||CITTASISS^CENTODUE^^^^^L||19750627|F|||VIA ALESSANDRINI, 1,&amp;VIA ALESSANDRINI&amp;1,^^BUSSERO^MI^^^L^^015040^B292~VIA ALESSANDRINI, 1,&amp;VIA ALESSANDRINI&amp;1,^^BUSSERO^MI^^^H^^015040^B292~^^BULGARIA^BG^^^BDL^^999209||111111^^PH^^^^^^^^^1111111|||||KZKMNB75H67Z104C|||||999209
+ORC|OK|2007_867973_1|2007A00000153|XXX
+TQ1||1|||||||R||||0
+OBR||674240||TRAT^F53 VISITA RADIOTERAPICA PRE TRATTAMENTO||201201161254||||||||||||||||||70|||1^^^^^R||||Z|||||201201161254||||||||||0^^99CSP~RTPV^^99SER~F53^^99CDC
+BLG||NC|048|000</outboundTemplate>
+        <inboundProtocol>HL7V2</inboundProtocol>
+        <outboundProtocol>HL7V2</outboundProtocol>
+        <inboundProperties/>
+        <outboundProperties>
+          <property name="handleRepetitions">false</property>
+          <property name="stripNamespaces">true</property>
+          <property name="convertLFtoCR">true</property>
+          <property name="useStrictValidation">false</property>
+          <property name="useStrictParser">false</property>
+        </outboundProperties>
+      </transformer>
+      <filter>
+        <rules/>
+      </filter>
+      <transportName>JavaScript Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+    </com.webreach.mirth.model.Connector>
+    <com.webreach.mirth.model.Connector>
+      <name>Manage WS Roberto</name>
+      <properties>
+        <property name="method">cameliaToMe4RT</property>
+        <property name="wsdlUrl">http://localhost:8080/simplelab/services/cameliaWs?wsdl</property>
+        <property name="attachmentNames">&lt;list/&gt;</property>
+        <property name="replyChannelId">sink</property>
+        <property name="definition">H4sIAAAAAAAAANVYTWzcRBR+6/1ftkm6hYr+AG1RaQDVXloOUSO1idJGBDlpSUKDoh468U6yBv/Vns06PUSqlBtHDogDZzhwRAKJE3CAGz8XJCQuiCsHjiAkeDP2+mfXmx9aIrDkWfvNezPvffPe+Jv96Fcoei6Ma7Ypd+maS4nWlk3dZdjaLWrIXU9eWbpO13VLZ7ptffH1JyfevbbzswR5Fepo5RjUX95yqMdgVH2TbBKlw3RDmSfOpAo126Eu4XbePdiGnAoNj7qbukZvWC3H1i32+uIcg0ZgaBBrQ1lirm5tTPoOenWUi2U+nvwK8do4ZrH84+dfHr/7XR6kWagZNmnNEo3Z7hxUWdulXts2Wr5zbQr4Ve9WsB3Du8TgCDUdtrVIPQedoTj4OdvdkImD8VIMUl+XPXwyiXzDoCa1GI8JgisnQXEVKpZuGGTNoBiW1taNVhj1WCJqVfcYhv0YjcdgcEoo+IpvGopFTPSAaFR5bQEfUbfARRwcSYUKQ4OF8L3qu3B2iI9L4ocPX7l79Opv33xwRgLwHcCwjsWYTbsu2eIu+Q++f+q9r8j7ecjNQcHT71PUxbi6BWxru2AxE69vjEV5DiqED31dN1ehqnvTVjATVIWYa4sAVBgJE2TGthjiweCCijMpwUwKn0kJZlJmUop9uIx59F6HWpg1Aa6I+hMJ1KM4Jwcg5G1NOO44DEBkYT0V+nPDIE5PGYePSVwjDLN0rcNonyc8SxnPkUkxczmeEIIJfZzxhEgHGdNBjtJBFunwwPzw4p+TPxmiuKqGrRHjFnFZiEI90saiCWUlx8XSFJNJPkZY8kT5MDjTZsy5oijdblfuXpY56peazZeUN+bVIHm4SYNB3u4w4eSTvDnN4PmEoUlbxLvo2UZHlLCsM8Vc7yoa+mHowQjpjIviP/bZ6Pmzr/7y6b7qtCLqNI+3FLjCoMDCJGoEs0QenuTNqYSQxZnSr3s6Fvq+4zv8qRR3l3jzdIhDFdfYFakrFEbCnOHP49EiSmHW8PfHM9Y2y0uE+C26FXfJ8axC+MwwEHhzbl8Q8OZ8lqacAOCAThc3idGhcefEIbo9kVy3WDyeXK+RMAmX7Xn68uLywKJNDZT6nvGnxi+KfIg7Z3eNv4h3YY+oZvuFmHSmbt3UtI7rDfblmlmDZCI73uebGJn4w0audqw1u2O1aCsb56kkDnU3/GJmlsbthyyNgoYcI+67c4hJduef10YZt2GPbCQcXz9Ex9ezV+12Ons52RGd5cGPXv8qNg5eKyk8JN2KezYPEYrNJBThBp9wxUpCcjy9YUREsB+M7YODkYK+4iZHFv07u0LC9478HoHuZAnVLOFCljAT5oTXyTzaToiFtDDApnNcPIVf/gu7nxpu9sj/ty++/cNy7eQfEpSQsrQpaVEXmYaK5krPXBHmijBHZqisLCH1wSVj1EVaNxoYLfQYEPdASpPEqtXXWXN6A4g4Kioc8WziTGvcpR6F8p3weyHCzuCHe8QYOfnx5ReUxftXf5egvgqFhY5hrEJR8OFVKIc0eC6xL88ldv/U4WJUHC5u9fteMijyunZG4DUvOg0weHYYwY6PDJxc9+gVmgdf+hAMjBx6V2YhvAO53F94pTWklEbiCsCVnaiuG8N0JhI6QSXPPmImJjz5nxExgcx/lYVFrw1+9EiU2yNmY3Ey/FtUjDcPuZ0OkDDeLGZpLmcDm6Bd0WvDZ9Dc94FMmcFNilG0uRTaiCNk2/bYlYnmRFPxdL4N4T6jhP/CeD3TFe9vjisU4wkSAAA=</property>
+        <property name="attachmentContents">&lt;list/&gt;</property>
+        <property name="soapEnvelope">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-16&quot;?&gt;
+&lt;soap:Envelope xmlns:soap=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot; xmlns:soapenc=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot;&gt;
+&lt;soap:Body&gt;&#x0D;
+  &lt;cameliaToMe4RT xmlns=&quot;http://www.medas-solutions.it/mfw/camelia&quot;&gt;&#x0D;
+    ${entryList}
+  &lt;/cameliaToMe4RT&gt;&#x0D;
+&lt;/soap:Body&gt;&#x0D;
+&lt;/soap:Envelope&gt;</property>
+        <property name="serviceEndpoint">http://localhost:8080/simplelab/services/cameliaWs</property>
+        <property name="DataType">SOAP Sender</property>
+        <property name="usePersistentQueues">0</property>
+        <property name="rotateQueue">0</property>
+        <property name="soapActionURI">http://www.medas-solutions.it/mfw/camelia/Create</property>
+        <property name="reconnectMillisecs">10000</property>
+        <property name="attachmentTypes">&lt;list/&gt;</property>
+        <property name="host">axis:http://localhost:8080/simplelab/services/cameliaWs?method=cameliaToMe4RT</property>
+        <property name="soapGenerateEnvelope">1</property>
+      </properties>
+      <transformer>
+        <steps>
+          <com.webreach.mirth.model.Step>
+            <sequenceNumber>0</sequenceNumber>
+            <name>Building entry list</name>
+            <script>/* 
+
+la struttura entry list e&apos; siffatta:
+
+&lt;entry xmlns=&quot;&quot;&gt;&#x0D;
+  &lt;key/&gt;&#x0D;
+  &lt;value/&gt;&#x0D;
+&lt;/entry&gt;
+
+*/
+
+// costruzione...
+var entryList = &apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;OrderControl&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;operazione_orderControl&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; + 
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientID&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientID&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientFiscalID&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientFiscalID&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientSTP&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientSTP&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientHealthID&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientHealthID&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientFamilyName&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientFamilyName&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientGivenName&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientGivenName&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientBirthDate&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientBirthDate&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PlacerOrderNumber&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;codiceCamelia_placerOrderNumber&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PlacerGroupNumber&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;codiceAppuntamentoCamelia_placerGroupNumber&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;Parent&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;IUP_parent&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;DateTimeOfTransaction&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;dataOra_dateTimeOfTransaction&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;OrderingProvider&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;idMedico_orderingProvider&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;EnterersLocation&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;servizio_enterersLocation&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;AdvanceDirectiveCode&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;DAO_advanceDirectiveCode&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PlacerField1&lt;/key&gt;&lt;value&gt;&apos; +$(&apos;impegnativa_placerField1&apos;)  + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;RelevantClinicalInformation&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;quesitoDiagnostico_relevantClinicalInformation&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;UniversalServiceIdentifier&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;codicePrestazione_universalServiceIdentifier&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos;;
+
+// log...
+logger.info(&quot;&gt;&gt;&gt; entryList da inviare = &quot; + entryList);
+
+// memorizzo...
+channelMap.put(&apos;entryList&apos;, entryList);</script>
+            <type>JavaScript</type>
+            <data class="map">
+              <entry>
+                <string>Script</string>
+                <string>/* 
+
+la struttura entry list e&apos; siffatta:
+
+&lt;entry xmlns=&quot;&quot;&gt;&#x0D;
+  &lt;key/&gt;&#x0D;
+  &lt;value/&gt;&#x0D;
+&lt;/entry&gt;
+
+*/
+
+// costruzione...
+var entryList = &apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;OrderControl&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;operazione_orderControl&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; + 
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientID&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientID&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientFiscalID&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientFiscalID&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientSTP&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientSTP&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientHealthID&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientHealthID&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientFamilyName&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientFamilyName&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientGivenName&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientGivenName&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PatientBirthDate&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;patientBirthDate&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PlacerOrderNumber&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;codiceCamelia_placerOrderNumber&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PlacerGroupNumber&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;codiceAppuntamentoCamelia_placerGroupNumber&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;Parent&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;IUP_parent&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;DateTimeOfTransaction&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;dataOra_dateTimeOfTransaction&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;OrderingProvider&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;idMedico_orderingProvider&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;EnterersLocation&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;servizio_enterersLocation&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;AdvanceDirectiveCode&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;DAO_advanceDirectiveCode&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;PlacerField1&lt;/key&gt;&lt;value&gt;&apos; +$(&apos;impegnativa_placerField1&apos;)  + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;RelevantClinicalInformation&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;quesitoDiagnostico_relevantClinicalInformation&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos; +
+&apos;&lt;entry xmlns=&quot;&quot;&gt;&lt;key&gt;UniversalServiceIdentifier&lt;/key&gt;&lt;value&gt;&apos; + $(&apos;codicePrestazione_universalServiceIdentifier&apos;) + &apos;&lt;/value&gt;&lt;/entry&gt;&apos;;
+
+// log...
+logger.info(&quot;&gt;&gt;&gt; entryList da inviare = &quot; + entryList);
+
+// memorizzo...
+channelMap.put(&apos;entryList&apos;, entryList);</string>
+              </entry>
+            </data>
+          </com.webreach.mirth.model.Step>
+        </steps>
+        <inboundTemplate></inboundTemplate>
+        <outboundTemplate></outboundTemplate>
+        <inboundProtocol>HL7V2</inboundProtocol>
+        <outboundProtocol>HL7V2</outboundProtocol>
+        <inboundProperties/>
+        <outboundProperties/>
+      </transformer>
+      <filter>
+        <rules/>
+      </filter>
+      <transportName>SOAP Sender</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>false</enabled>
+    </com.webreach.mirth.model.Connector>
+  </destinationConnectors>
+  <properties>
+    <property name="initialState">started</property>
+    <property name="synchronous">true</property>
+    <property name="store_messages">true</property>
+    <property name="encryptData">false</property>
+    <property name="transactional">false</property>
+    <property name="max_message_age">15</property>
+    <property name="dont_store_filtered">false</property>
+    <property name="error_messages_only">false</property>
+  </properties>
+  <preprocessingScript>// Modify the message variable below to pre process data
+return message;</preprocessingScript>
+  <postprocessingScript>// This script executes once after a message has been processed
+return;</postprocessingScript>
+  <deployScript>// This script executes once when the mule engine is started
+// You only have access to the globalMap here to persist data
+return;</deployScript>
+  <shutdownScript>// This script executes once when the mule engine is stopped
+// You only have access to the globalMap here to persist data
+return;</shutdownScript>
+</com.webreach.mirth.model.Channel>

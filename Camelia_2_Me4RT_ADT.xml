@@ -1,0 +1,295 @@
+<com.webreach.mirth.model.Channel>
+  <id>f4576e7d-53d2-4278-970a-f1b3d6fbd769</id>
+  <name>Camelia_2_Me4RT_ADT</name>
+  <description></description>
+  <enabled>false</enabled>
+  <version>1.8.2.4472</version>
+  <lastModified>
+    <time>1319122700207</time>
+    <timezone>Europe/Berlin</timezone>
+  </lastModified>
+  <revision>32</revision>
+  <sourceConnector>
+    <name>sourceConnector</name>
+    <properties>
+      <property name="messageEnd">0x1C</property>
+      <property name="ackCodeError">AE</property>
+      <property name="messageStart">0x0B</property>
+      <property name="ackMsgRejected">Message Rejected.</property>
+      <property name="ackCodeRejected">AR</property>
+      <property name="receiveTimeout">0</property>
+      <property name="charEncoding">hex</property>
+      <property name="bufferSize">65536</property>
+      <property name="useStrictLLP">1</property>
+      <property name="reconnectInterval">5000</property>
+      <property name="waitForEndOfMessageCharacter">0</property>
+      <property name="sendACK">0</property>
+      <property name="port">6661</property>
+      <property name="ackOnNewConnection">0</property>
+      <property name="checkMSH15">0</property>
+      <property name="ackMsgSuccessful"></property>
+      <property name="tcpProtocolClassName">org.mule.providers.tcp.protocols.TcpProtocol</property>
+      <property name="responseFromTransformer">1</property>
+      <property name="ackPort"></property>
+      <property name="segmentEnd">0x0D</property>
+      <property name="charsetEncoding">DEFAULT_ENCODING</property>
+      <property name="host">127.0.0.1</property>
+      <property name="responseValue">ACK</property>
+      <property name="DataType">LLP Listener</property>
+      <property name="ackMsgError">An Error Occured Processing Message.</property>
+      <property name="processBatchFiles">1</property>
+      <property name="serverMode">1</property>
+      <property name="ackCodeSuccessful">AA</property>
+      <property name="ackIP"></property>
+      <property name="recordSeparator">0x0D</property>
+    </properties>
+    <transformer>
+      <steps>
+        <com.webreach.mirth.model.Step>
+          <sequenceNumber>0</sequenceNumber>
+          <name>Read Data</name>
+          <script>var tipoMsg = msg[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSG.1&apos;].toString();
+var eventoMsg = msg[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSG.2&apos;].toString();
+var reparto = msg[&apos;PV1&apos;][&apos;PV1.3&apos;][&apos;PL.9&apos;].toString();
+logger.error(tipoMsg);
+logger.error(eventoMsg);
+logger.error(msg[&apos;PV1&apos;][&apos;PV1.3&apos;][&apos;PL.9&apos;].toString());
+channelMap.put(&apos;tipoMsg&apos;,tipoMsg);
+channelMap.put(&apos;eventoMsg&apos;,eventoMsg);
+channelMap.put(&apos;reparto&apos;,reparto);</script>
+          <type>JavaScript</type>
+          <data class="map">
+            <entry>
+              <string>Script</string>
+              <string>var tipoMsg = msg[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSG.1&apos;].toString();
+var eventoMsg = msg[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSG.2&apos;].toString();
+var reparto = msg[&apos;PV1&apos;][&apos;PV1.3&apos;][&apos;PL.9&apos;].toString();
+logger.error(tipoMsg);
+logger.error(eventoMsg);
+logger.error(msg[&apos;PV1&apos;][&apos;PV1.3&apos;][&apos;PL.9&apos;].toString());
+channelMap.put(&apos;tipoMsg&apos;,tipoMsg);
+channelMap.put(&apos;eventoMsg&apos;,eventoMsg);
+channelMap.put(&apos;reparto&apos;,reparto);</string>
+            </entry>
+          </data>
+        </com.webreach.mirth.model.Step>
+      </steps>
+      <inboundTemplate>MSH|^~\&amp;|IRIS|SANTER|ME4RT|MEDAS|200905221020||ADT^A01|10|P|2.5
+EVN||200905211556
+PID|||2722208^^^^PI^BDA~^^^^SS~ZZZZZZZZZZZZZZZZZ^^^^NN||CITTASISS^CENTODUE^^^^^L||19750627|F|||VIA ALESSANDRINI, 1,&amp;VIA ALESSANDRINI&amp;1,^^BUSSERO^MI^^^L^^015040^B292~VIA ALESSANDRINI, 1,&amp;VIA ALESSANDRINI&amp;1,^^BUSSERO^MI^^^H^^015040^B292~^^BULGARIA^BG^^^BDL^^999209||111111^^PH^^^^^^^^^1111111|||||KZKMNB75H67Z104C|||||999209
+PV1||I|0802^^^978^^^^^CARDIOLOGIA 1^LODI|1|||^^^^^^^^^^^^RRI|^^^^^^^^^^^^LR||||||2|||LP144^ANZI^CLAUDIO^^^^^^^^^^LR||2009801602|1||||||||||||||||||||||||20090508155200</inboundTemplate>
+      <outboundTemplate></outboundTemplate>
+      <inboundProtocol>HL7V2</inboundProtocol>
+      <outboundProtocol>HL7V2</outboundProtocol>
+      <inboundProperties>
+        <property name="handleRepetitions">true</property>
+        <property name="stripNamespaces">true</property>
+        <property name="convertLFtoCR">true</property>
+        <property name="useStrictParser">true</property>
+        <property name="useStrictValidation">false</property>
+      </inboundProperties>
+      <outboundProperties/>
+    </transformer>
+    <filter>
+      <rules/>
+    </filter>
+    <transportName>LLP Listener</transportName>
+    <mode>SOURCE</mode>
+    <enabled>true</enabled>
+  </sourceConnector>
+  <destinationConnectors>
+    <com.webreach.mirth.model.Connector>
+      <name>Log Message</name>
+      <properties>
+        <property name="secure">1</property>
+        <property name="scheme">file</property>
+        <property name="binary">0</property>
+        <property name="username">anonymous</property>
+        <property name="outputPattern">Camelia_2_Me4RT.txt</property>
+        <property name="validateConnections">1</property>
+        <property name="DataType">File Writer</property>
+        <property name="FTPAnonymous">1</property>
+        <property name="charsetEncoding">DEFAULT_ENCODING</property>
+        <property name="template">${message.rawData}</property>
+        <property name="passive">1</property>
+        <property name="password">anonymous</property>
+        <property name="outputAppend">1</property>
+        <property name="host">c:/Users/rch/Downloads/</property>
+      </properties>
+      <transformer>
+        <steps/>
+        <inboundProtocol>HL7V2</inboundProtocol>
+        <outboundProtocol>HL7V2</outboundProtocol>
+        <inboundProperties/>
+      </transformer>
+      <filter>
+        <rules/>
+      </filter>
+      <transportName>File Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+    </com.webreach.mirth.model.Connector>
+    <com.webreach.mirth.model.Connector>
+      <name>Chiamata WS</name>
+      <properties>
+        <property name="method">getNextProducerID</property>
+        <property name="wsdlUrl">http://localhost:18080/fraseggio/services/RepDocAdmin?wsdl</property>
+        <property name="attachmentNames">&lt;list/&gt;</property>
+        <property name="replyChannelId">sink</property>
+        <property name="definition">H4sIAAAAAAAAAJVTy24TMRR10/Q1aukbQaXCAiQoSJkiQKpaiRIoFZWmDyVFlbLC8dxkDM7YtT3NtAskJHZ8AGLBH7BEYg0sYAlskFiy5wNgxZ1J0qalBcULzx3b5xz73Htf/yQ9RpPLTNZydShroCzI1bi2OEsfRK5uclvFJajwkFsuw/ef3p59sfjsR4Z0e2QQUUpAvLmrwFgy7D2iO9SNLBfuKlULHnGkAk0TnNkmT0iXR8YM6B3O4F7oK8lD+6CwYslYAyhoWHWLVvOwuhArvNVospxL+HL3qQmQs6fv+7sPpx9+6SaZZeIISf1lyqzUK2TABhpMIIUfq8XbJBmD9X6cR5IwTvWzf230WjJlwK5Jyyu7RUstrEqfVzhrXFqTS/82Zr31vs9Xn3/bdKZ+Z0ivR3oDoD5oS2Y8hLstuJvC3RTu1o27VdygmtbAgkavhhugNVwwijJILpzxSDbEhWY8EB7ZdFSLAO0fabPf48Yi55CRVOVZckE0OgXFSqkk6LNkOrBWzbtuMyUmp0H5kuWQkN6g+PjxA//zWtPdhDV++nX65Uf6qpt0rZCs4XsQKzSyq57F2fm/Y/tPfnP9ilvYu/UrQwZLJLsWCVEiPTSRKZG+ZmFhWms0Xmcs0iaJediIS6Q/5ELQsgA0jgVc+Pu8aaYdTIKAsGqDY2x0DAugRpOqteSCJ3XVpWhqAJgUXnEbu25x/xAambX4bcJ7dqiIoGkmaRtKWXIuPL6UCrAdYY/giV6TVrjFokw4JrBvIAZ2hxrOGnWYvqC/kabJZBpMV4babE7+h49qj5UPOFp6ycHxVKelNlrFeofYbmjpRwz0ylK73lQHepPhIZqTJR2ULIAAaqBd63wHWqd0A3+yyAT28ZJkUQ1Cm7focTmyh+QudiB3xj/KdLLwkKlRbe9S7XuSPW5XnOlAcUIguNhiOkkttuRms2vxPBWBNHb+2tzs3Kxb0WhPtcrlfj+7BVDoSN7HvvkDb1Wp0OgFAAA=</property>
+        <property name="attachmentContents">&lt;list/&gt;</property>
+        <property name="soapEnvelope">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-16&quot;?&gt;
+&lt;soap:Envelope xmlns:soap=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot; xmlns:soapenc=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot;&gt;
+&lt;soap:Body&gt;&#x0D;
+  &lt;getNextProducerID xmlns=&quot;http://services.repdoc.meta4a&quot;&gt;&#x0D;
+    &lt;nextProducerIDRequest&gt;
+&lt;![CDATA[&lt;Message xmlns=&quot;http://www.metafora.mi.it/schemas/basic&quot;&gt;
+	&lt;Header&gt;
+		&lt;Sender&gt;SCM&lt;/Sender&gt;
+		&lt;Receiver&gt;REPDOC&lt;/Receiver&gt;
+		&lt;MesgID/&gt;
+		&lt;Action&gt;RepDocAdmin.nextProducerID&lt;/Action&gt;
+		&lt;ProcessingMode&gt;D&lt;/ProcessingMode&gt;
+		&lt;Version&gt;1.0&lt;/Version&gt;
+		&lt;Timestamp&gt;20091030T211501&lt;/Timestamp&gt;
+	&lt;/Header&gt;
+	&lt;Data&gt;
+		         &lt;rd:NextProducerIDRequest xmlns:rd=&quot;http://www.metafora.mi.it/schemas/fraseggio/next_producer_id_req&quot;/&gt;
+	&lt;/Data&gt;
+&lt;/Message&gt;]]&gt;
+	&lt;/nextProducerIDRequest&gt;&#x0D;
+  &lt;/getNextProducerID&gt;&#x0D;
+&lt;/soap:Body&gt;&#x0D;
+&lt;/soap:Envelope&gt;</property>
+        <property name="DataType">SOAP Sender</property>
+        <property name="serviceEndpoint">http://localhost:18080/fraseggio/services/RepDocAdmin</property>
+        <property name="usePersistentQueues">0</property>
+        <property name="rotateQueue">0</property>
+        <property name="soapActionURI"></property>
+        <property name="reconnectMillisecs">10000</property>
+        <property name="attachmentTypes">&lt;list/&gt;</property>
+        <property name="host">axis:http://localhost:18080/fraseggio/services/RepDocAdmin?method=getNextProducerID</property>
+        <property name="soapGenerateEnvelope">1</property>
+      </properties>
+      <transformer>
+        <steps/>
+        <inboundTemplate></inboundTemplate>
+        <outboundTemplate></outboundTemplate>
+        <inboundProtocol>HL7V2</inboundProtocol>
+        <outboundProtocol>HL7V2</outboundProtocol>
+        <inboundProperties/>
+        <outboundProperties/>
+      </transformer>
+      <filter>
+        <rules/>
+      </filter>
+      <transportName>SOAP Sender</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+    </com.webreach.mirth.model.Connector>
+    <com.webreach.mirth.model.Connector>
+      <name>Termine operazioni</name>
+      <properties>
+        <property name="script">
+logger.error(&quot;Termine operazioni&quot;);</property>
+        <property name="DataType">JavaScript Writer</property>
+        <property name="host">sink</property>
+      </properties>
+      <transformer>
+        <steps>
+          <com.webreach.mirth.model.Step>
+            <sequenceNumber>0</sequenceNumber>
+            <name>Lettura risposta WS</name>
+            <script>var outWS = responseMap.get(&apos;Chiamata WS&apos;).toString();
+
+logger.error(outWS);</script>
+            <type>JavaScript</type>
+            <data class="map">
+              <entry>
+                <string>Script</string>
+                <string>var outWS = responseMap.get(&apos;Chiamata WS&apos;).toString();
+
+logger.error(outWS);</string>
+              </entry>
+            </data>
+          </com.webreach.mirth.model.Step>
+          <com.webreach.mirth.model.Step>
+            <sequenceNumber>1</sequenceNumber>
+            <name>Crea ACK</name>
+            <script>logger.error(&quot;tipoMSG dalla mappa = &quot; + channelMap.get(&apos;tipoMsg&apos;));
+logger.error(&quot;eventoMSG dalla mappa = &quot; + channelMap.get(&apos;eventoMsg&apos;));
+
+/*
+tmp[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSH.9.1&apos;] = &apos;ACK&apos;;
+tmp[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSH.9.3&apos;] = &apos;ACK&apos;;
+*/
+tmp[&apos;MSH&apos;][&apos;MSH.7&apos;][&apos;MSH.7.1&apos;] = DateUtil.getCurrentDate(&apos;yyyyMMddhhmmss&apos;);
+tmp[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;] = Packages.ca.uhn.hl7v2.util.MessageIDGenerator.getInstance().getNewID();
+responseMap.put(&apos;ACK&apos;, ResponseFactory.getSuccessResponse(SerializerFactory.getHL7Serializer(false, false, false).fromXML(tmp)));
+logger.error(&quot;ACK inviato&quot;);
+
+/*
+logger.error(&quot;tipoMSG dalla mappa = &quot; + $(&apos;tipoMsg&apos;));
+logger.error(&quot;eventoMSG dalla mappa = &quot; + $(&apos;eventoMsg&apos;));
+*/</script>
+            <type>JavaScript</type>
+            <data class="map">
+              <entry>
+                <string>Script</string>
+                <string>logger.error(&quot;tipoMSG dalla mappa = &quot; + channelMap.get(&apos;tipoMsg&apos;));
+logger.error(&quot;eventoMSG dalla mappa = &quot; + channelMap.get(&apos;eventoMsg&apos;));
+
+/*
+tmp[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSH.9.1&apos;] = &apos;ACK&apos;;
+tmp[&apos;MSH&apos;][&apos;MSH.9&apos;][&apos;MSH.9.3&apos;] = &apos;ACK&apos;;
+*/
+tmp[&apos;MSH&apos;][&apos;MSH.7&apos;][&apos;MSH.7.1&apos;] = DateUtil.getCurrentDate(&apos;yyyyMMddhhmmss&apos;);
+tmp[&apos;MSH&apos;][&apos;MSH.10&apos;][&apos;MSH.10.1&apos;] = Packages.ca.uhn.hl7v2.util.MessageIDGenerator.getInstance().getNewID();
+responseMap.put(&apos;ACK&apos;, ResponseFactory.getSuccessResponse(SerializerFactory.getHL7Serializer(false, false, false).fromXML(tmp)));
+logger.error(&quot;ACK inviato&quot;);
+
+/*
+logger.error(&quot;tipoMSG dalla mappa = &quot; + $(&apos;tipoMsg&apos;));
+logger.error(&quot;eventoMSG dalla mappa = &quot; + $(&apos;eventoMsg&apos;));
+*/</string>
+              </entry>
+            </data>
+          </com.webreach.mirth.model.Step>
+        </steps>
+        <inboundTemplate></inboundTemplate>
+        <outboundTemplate>MSH|^~\&amp;|ME4RT|MEDAS|IRIS|SANTER|20111014122710||ACK^A01^ACK|20111014122710|P|2.5
+MSA|AA|10</outboundTemplate>
+        <inboundProtocol>HL7V2</inboundProtocol>
+        <outboundProtocol>HL7V2</outboundProtocol>
+        <inboundProperties/>
+        <outboundProperties/>
+      </transformer>
+      <filter>
+        <rules/>
+      </filter>
+      <transportName>JavaScript Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+    </com.webreach.mirth.model.Connector>
+  </destinationConnectors>
+  <properties>
+    <property name="initialState">started</property>
+    <property name="synchronous">true</property>
+    <property name="store_messages">true</property>
+    <property name="encryptData">false</property>
+    <property name="transactional">false</property>
+    <property name="max_message_age">15</property>
+    <property name="dont_store_filtered">false</property>
+    <property name="error_messages_only">false</property>
+  </properties>
+  <preprocessingScript>// Modify the message variable below to pre process data
+return message;</preprocessingScript>
+  <postprocessingScript>// This script executes once after a message has been processed
+return;</postprocessingScript>
+  <deployScript>// This script executes once when the mule engine is started
+// You only have access to the globalMap here to persist data
+return;</deployScript>
+  <shutdownScript>// This script executes once when the mule engine is stopped
+// You only have access to the globalMap here to persist data
+return;</shutdownScript>
+</com.webreach.mirth.model.Channel>
